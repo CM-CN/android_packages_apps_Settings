@@ -131,4 +131,15 @@
     <string name="screenshot_type_title">屏幕截图类型</string>
     <string name="screenshot_type_fullscreen">采取全屏幕截图</string>
     <string name="screenshot_type_partial">在要作为屏幕截图拍摄的区域上拖动选择</string>
+    <!-- Expanded desktop -->
+    <string name="expanded_desktop_category">扩展桌面</string>
+    <string name="expanded_hide_nothing">不隐藏</string>
+    <string name="expanded_hide_status">隐藏状态栏</string>
+    <string name="expanded_hide_navigation">隐藏导航栏</string>
+    <string name="expanded_hide_both">全部隐藏</string>
+    <string name="expanded_nothing_to_show">要为展开状态添加自定义的每个应用程序配置，请将“全部启用”设置为关闭位置</string>
+    <string name="expanded_desktop_state">扩展状态</string>
+    <string name="expanded_enabled_for_all">启用所有</string>
+    <string name="expanded_user_configurable">用户可配置</string>
+
 </resources>
