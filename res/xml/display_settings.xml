@@ -223,6 +223,13 @@
 		 android:summary="@string/force_expanded_notifications_summary"
 		 android:defaultValue="false" />
 
+    	     <!-- Camera shutter -->
+    	     <com.android.settings.sdhz150.SystemSettingSwitchPreference
+                 android:key="camera_sounds"
+                 android:title="@string/camera_sounds_title"
+                 android:summary="@string/camera_sounds_summary"
+                 android:defaultValue="true" />
+
         </PreferenceCategory>
 
       <PreferenceCategory

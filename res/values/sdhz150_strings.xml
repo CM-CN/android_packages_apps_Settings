@@ -136,4 +136,7 @@
     <string name="omniswitch_first_time_title">Information</string>
     <string name="omniswitch_first_time_message">Make sure you have enabled OmniSwitch. You can do this by using \"Settings\" below</string>
     <string name="omniswitch_settings_title">OmniSwitch</string>
+    <!-- Camera shutter sound -->
+    <string name="camera_sounds_title">Camera shutter sound</string>
+    <string name="camera_sounds_summary">Disabling may not work on 3rd party camera apps and in HDR+ mode</string>
 </resources>

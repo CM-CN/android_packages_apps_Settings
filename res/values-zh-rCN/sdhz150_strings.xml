@@ -131,4 +131,7 @@
     <string name="screenshot_type_title">屏幕截图类型</string>
     <string name="screenshot_type_fullscreen">采取全屏幕截图</string>
     <string name="screenshot_type_partial">在要作为屏幕截图拍摄的区域上拖动选择</string>
+    <!-- Camera shutter sound -->
+    <string name="camera_sounds_title">相机快门音</string>
+    <string name="camera_sounds_summary">停用可能无法在第三方相机应用程式和HDR +模式中运作</string>
 </resources>
