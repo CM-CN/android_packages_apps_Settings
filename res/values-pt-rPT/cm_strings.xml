@@ -39,6 +39,11 @@
   <string name="root_access_adb">Só ADB</string>
   <string name="root_access_all">Aplicações e ADB</string>
   <!-- Preference link for root appops -->
+<<<<<<< HEAD
+=======
+  <string name="root_appops_title">Gerir os acessos root</string>
+  <string name="root_appops_summary">Ver e controlar as regras de root</string>
+>>>>>>> 5c6ce045c1b1e4f2b751e3b217dcc1b9ae0525c1
   <!-- NFC PreferenceCategory title -->
   <string name="nfc_title_category">NFC</string>
   <!-- About phone screen, CyanogenMod version -->
@@ -605,7 +610,15 @@
   <string name="live_display_color_profile_adaptive_title">Adaptável</string>
   <string name="live_display_color_profile_adaptive_summary">As cores adaptam-se às condições ambientais</string>
   <!-- LiveDisplay : Picture Adjustment -->
+<<<<<<< HEAD
   <string name="adj_saturation_title">Saturação</string>
+=======
+  <string name="picture_adjustment_title">Ajuste da imagem</string>
+  <string name="picture_adjustment_summary">Ajustar a tonalidade, a saturação, a intensidade e o contraste</string>
+  <string name="adj_hue_title">Tonalidade</string>
+  <string name="adj_saturation_title">Saturação</string>
+  <string name="adj_intensity_title">Intensidade</string>
+>>>>>>> 5c6ce045c1b1e4f2b751e3b217dcc1b9ae0525c1
   <string name="adj_contrast_title">Contraste</string>
   <!-- Whether to display IME switcher notifcation -->
   <string name="ime_switcher_notify">Ícone de seleção</string>
@@ -686,8 +699,8 @@
   <string name="status_bar_notif_count_summary">Mostrar o número de notificações pendentes</string>
   <string name="status_bar_quick_qs_pulldown_title">Puxar para baixo</string>
   <string name="status_bar_quick_qs_pulldown_summary">O canto %1$s da barra de estado faz baixar o painel de definições rápidas</string>
-  <string name="status_bar_quick_qs_pulldown_summary_left">esquerdo</string>
-  <string name="status_bar_quick_qs_pulldown_summary_right">direito</string>
+  <string name="status_bar_quick_qs_pulldown_summary_left">Esquerda</string>
+  <string name="status_bar_quick_qs_pulldown_summary_right">Direita</string>
   <string name="status_bar_quick_qs_pulldown_off">Desligado</string>
   <string name="status_bar_quick_qs_pulldown_left">Esquerda</string>
   <string name="status_bar_quick_qs_pulldown_right">Direita</string>

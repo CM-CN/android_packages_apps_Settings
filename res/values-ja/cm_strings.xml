@@ -824,7 +824,7 @@
   <string name="select_contact">連絡先を選択</string>
   <!-- Sms security limit -->
   <string name="app_security_title">アプリのセキュリティ</string>
-  <string name="sms_security_check_limit_title">SMSメッセージの制限</string>
+  <string name="sms_security_check_limit_title">SMSメッセージの上限</string>
   <string name="sms_security_check_limit_summary">アプリは確認をする前に1分間に%d通のメッセージを送信することができます</string>
   <string name="sms_security_check_limit_summary_none">アプリは許可無くメッセージを送信することはできません</string>
   <string name="sms_security_check_limit_none">なし</string>
@@ -1053,7 +1053,7 @@
   <string name="lockscreen_wallpaper_title">壁紙</string>
   <string name="not_available_with_app">%1$sでは利用できません</string>
   <!-- Format string for fingerprint location message -->
-  <string name="security_settings_fingerprint_enroll_find_sensor_message_cm">携帯電話の<xliff:g id="sensor_location">%1$s</xliff:g>にある指紋センサーを探してください。</string>
+  <string name="security_settings_fingerprint_enroll_find_sensor_message_cm">端末の<xliff:g id="sensor_location">%1$s</xliff:g>にある指紋認証センサーを探します。</string>
   <!-- Fingerprint sensor locations -->
   <string name="security_settings_fingerprint_sensor_location_back">背面</string>
   <string name="security_settings_fingerprint_sensor_location_front">前面</string>
