@@ -40,10 +40,7 @@
   <string name="root_access_all">Apps und ADB</string>
   <!-- Preference link for root appops -->
   <string name="root_appops_title">Root-Zugriffe verwalten</string>
-<<<<<<< HEAD
-=======
   <string name="root_appops_summary">Anzeigen und Kontrollieren der Root-Regeln</string>
->>>>>>> 5c6ce045c1b1e4f2b751e3b217dcc1b9ae0525c1
   <!-- NFC PreferenceCategory title -->
   <string name="nfc_title_category">NFC</string>
   <!-- About phone screen, CyanogenMod version -->
@@ -349,7 +346,7 @@
   <string name="app_ops_summaries_toast_window">Pop-ups anzeigen</string>
   <string name="app_ops_summaries_project_media">Medien projizieren</string>
   <string name="app_ops_summaries_activate_vpn">VPN aktivieren</string>
-  <string name="app_ops_summaries_write_wallpaper">Hintergrundbild schreiben</string>
+  <string name="app_ops_summaries_write_wallpaper">Hintergrund schreiben</string>
   <string name="app_ops_summaries_assist_structure">Strukturassistent</string>
   <string name="app_ops_summaries_assist_screenshot">Screenshotassistent</string>
   <string name="app_ops_summaries_read_phone_state">Telefonstatus lesen</string>
@@ -419,7 +416,7 @@
   <string name="app_ops_labels_toast_window">Pop-ups anzeigen</string>
   <string name="app_ops_labels_project_media">Medien projizieren</string>
   <string name="app_ops_labels_activate_vpn">VPN aktivieren</string>
-  <string name="app_ops_labels_write_wallpaper">Hintergrundbild schreiben</string>
+  <string name="app_ops_labels_write_wallpaper">Hintergrund schreiben</string>
   <string name="app_ops_labels_assist_structure">Strukturassistent</string>
   <string name="app_ops_labels_assist_screenshot">Screenshotassistent</string>
   <string name="app_ops_labels_read_phone_state">Telefonstatus lesen</string>
@@ -611,15 +608,10 @@
   <string name="live_display_color_profile_adaptive_summary">Farben an Umgebungsbedingungen anpassen</string>
   <!-- LiveDisplay : Picture Adjustment -->
   <string name="picture_adjustment_title">Bildanpassung</string>
-<<<<<<< HEAD
-  <string name="adj_hue_title">Farbton</string>
-  <string name="adj_saturation_title">Sättigung</string>
-=======
   <string name="picture_adjustment_summary">Farbton, Sättigung, Leuchtdichte und Kontrast anpassen</string>
   <string name="adj_hue_title">Farbton</string>
   <string name="adj_saturation_title">Sättigung</string>
   <string name="adj_intensity_title">Leuchtdichte</string>
->>>>>>> 5c6ce045c1b1e4f2b751e3b217dcc1b9ae0525c1
   <string name="adj_contrast_title">Kontrast</string>
   <!-- Whether to display IME switcher notifcation -->
   <string name="ime_switcher_notify">Auswahlsymbol</string>
