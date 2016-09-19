@@ -134,6 +134,7 @@
                 android:key="notification_lights" />
 
     </PreferenceCategory>
+<<<<<<< HEAD
  
         <PreferenceCategory
             android:key="show_network_options"
@@ -148,5 +149,7 @@
         	android:defaultValue="3" />
 
          </PreferenceCategory>
+=======
+>>>>>>> 3a6c509d0ee31bc0bb937911682c273005ccd174
 
 </PreferenceScreen>

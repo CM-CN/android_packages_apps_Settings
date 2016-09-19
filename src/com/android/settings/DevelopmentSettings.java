@@ -63,6 +63,10 @@ import android.support.v14.preference.SwitchPreference;
 import android.support.v7.preference.ListPreference;
 import android.support.v7.preference.Preference;
 import android.support.v7.preference.Preference.OnPreferenceChangeListener;
+<<<<<<< HEAD
+=======
+import android.support.v7.preference.Preference.OnPreferenceClickListener;
+>>>>>>> 3a6c509d0ee31bc0bb937911682c273005ccd174
 import android.support.v7.preference.PreferenceGroup;
 import android.support.v7.preference.PreferenceScreen;
 import android.text.TextUtils;
@@ -80,6 +84,10 @@ import android.widget.Toast;
 
 import com.android.internal.app.LocalePicker;
 import com.android.internal.logging.MetricsProto.MetricsEvent;
+<<<<<<< HEAD
+=======
+import com.android.settings.Settings.AppOpsSummaryActivity;
+>>>>>>> 3a6c509d0ee31bc0bb937911682c273005ccd174
 import com.android.settings.applications.BackgroundCheckSummary;
 import com.android.settings.fuelgauge.InactiveApps;
 import com.android.settings.search.BaseSearchIndexProvider;
@@ -99,7 +107,8 @@ import java.util.List;
  */
 public class DevelopmentSettings extends RestrictedSettingsFragment
         implements DialogInterface.OnClickListener, DialogInterface.OnDismissListener,
-                OnPreferenceChangeListener, SwitchBar.OnSwitchChangeListener, Indexable {
+                OnPreferenceChangeListener, SwitchBar.OnSwitchChangeListener, Indexable,
+                OnPreferenceClickListener {
     private static final String TAG = "DevelopmentSettings";
 
     /**
@@ -192,6 +201,11 @@ public class DevelopmentSettings extends RestrictedSettingsFragment
 
     private static final String ROOT_ACCESS_KEY = "root_access";
     private static final String ROOT_ACCESS_PROPERTY = "persist.sys.root_access";
+<<<<<<< HEAD
+=======
+
+    private static final String ROOT_APPOPS_KEY = "root_appops";
+>>>>>>> 3a6c509d0ee31bc0bb937911682c273005ccd174
 
     private static final String IMMEDIATELY_DESTROY_ACTIVITIES_KEY
             = "immediately_destroy_activities";
@@ -300,10 +314,19 @@ public class DevelopmentSettings extends RestrictedSettingsFragment
 
     private ColorModePreference mColorModePreference;
 
+<<<<<<< HEAD
+=======
+    private Preference mRootAppops;
+
+>>>>>>> 3a6c509d0ee31bc0bb937911682c273005ccd174
     private SwitchPreference mForceResizable;
 
     private SwitchPreference mColorTemperaturePreference;
     
+    private ListPreference mRootAccess;
+    private Object mSelectedRootValue;
+    private PreferenceScreen mDevelopmentTools;
+
     private ListPreference mRootAccess;
     private Object mSelectedRootValue;
     private PreferenceScreen mDevelopmentTools;
@@ -503,8 +526,18 @@ public class DevelopmentSettings extends RestrictedSettingsFragment
 
         mRootAccess = (ListPreference) findPreference(ROOT_ACCESS_KEY);
         mRootAccess.setOnPreferenceChangeListener(this);
+<<<<<<< HEAD
         if (!removeRootOptionsIfRequired()) {
             mAllPrefs.add(mRootAccess);
+=======
+
+        mRootAppops = (Preference) findPreference(ROOT_APPOPS_KEY);
+        mRootAppops.setOnPreferenceClickListener(this);
+
+        if (!removeRootOptionsIfRequired()) {
+            mAllPrefs.add(mRootAccess);
+            mAllPrefs.add(mRootAppops);
+>>>>>>> 3a6c509d0ee31bc0bb937911682c273005ccd174
         }
 
         mDevelopmentTools = (PreferenceScreen) findPreference(DEVELOPMENT_TOOLS);
@@ -824,6 +857,13 @@ public class DevelopmentSettings extends RestrictedSettingsFragment
         mRootAccess.setValue(value);
         mRootAccess.setSummary(getResources()
                 .getStringArray(R.array.root_access_entries)[Integer.valueOf(value)]);
+<<<<<<< HEAD
+=======
+
+        if (mRootAppops != null) {
+            mRootAppops.setEnabled(isRootForAppsEnabled());
+        }
+>>>>>>> 3a6c509d0ee31bc0bb937911682c273005ccd174
     }
 
     public static boolean isRootForAppsEnabled() {
@@ -1847,6 +1887,22 @@ public class DevelopmentSettings extends RestrictedSettingsFragment
     }
 
     @Override
+<<<<<<< HEAD
+=======
+    public boolean onPreferenceClick(Preference preference) {
+        if (preference == mRootAppops) {
+            Activity mActivity = getActivity();
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.putExtra("appops_tab", getString(R.string.app_ops_categories_su));
+            intent.setClass(mActivity, AppOpsSummaryActivity.class);
+            mActivity.startActivity(intent);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+>>>>>>> 3a6c509d0ee31bc0bb937911682c273005ccd174
     public boolean onPreferenceTreeClick(Preference preference) {
         if (Utils.isMonkeyRunning()) {
             return false;

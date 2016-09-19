@@ -77,7 +77,10 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     /** If there is no setting in the provider, use this. */
     private static final int FALLBACK_SCREEN_TIMEOUT_VALUE = 30000;
 
+<<<<<<< HEAD
     private static final String STATUS_BAR_NETWORK_TRAFFIC_STYLE = "status_bar_network_traffic_style";
+=======
+>>>>>>> 3a6c509d0ee31bc0bb937911682c273005ccd174
     private static final String KEY_CATEGORY_DISPLAY = "display";
     private static final String KEY_SCREEN_TIMEOUT = "screen_timeout";
     private static final String KEY_FONT_SIZE = "font_size";
@@ -130,6 +133,7 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
             getPreferenceScreen().removePreference(mScreenSaverPreference);
         }
 
+<<<<<<< HEAD
         mStatusBarNetworkTraffic = (ListPreference) findPreference(STATUS_BAR_NETWORK_TRAFFIC_STYLE);
         int networkTrafficStyle = Settings.System.getInt(resolver,
                 Settings.System.STATUS_BAR_NETWORK_TRAFFIC_STYLE, 3);
@@ -142,6 +146,12 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
 
         mFontSizePref = findPreference(KEY_FONT_SIZE);
 
+=======
+        mScreenTimeoutPreference = (TimeoutListPreference) findPreference(KEY_SCREEN_TIMEOUT);
+
+        mFontSizePref = findPreference(KEY_FONT_SIZE);
+
+>>>>>>> 3a6c509d0ee31bc0bb937911682c273005ccd174
         if (displayPrefs != null) {
             mAutoBrightnessPreference = (SwitchPreference) findPreference(KEY_AUTO_BRIGHTNESS);
             if (mAutoBrightnessPreference != null) {

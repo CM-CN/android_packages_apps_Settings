@@ -116,6 +116,14 @@
         android:persistent="false"
         android:entries="@array/root_access_entries"
         android:entryValues="@array/root_access_values" />
+<<<<<<< HEAD
+=======
+
+    <Preference
+        android:key="root_appops"
+        android:title="@string/root_appops_title"
+        android:summary="@string/root_appops_summary" />
+>>>>>>> 3a6c509d0ee31bc0bb937911682c273005ccd174
 
     <PreferenceCategory android:key="debug_debugging_category"
             android:title="@string/debug_debugging_category">
