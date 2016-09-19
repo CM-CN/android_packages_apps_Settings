@@ -26,10 +26,7 @@ import android.text.format.Formatter;
 import android.text.format.Formatter.BytesResult;
 import com.android.internal.logging.MetricsProto.MetricsEvent;
 import com.android.settings.R;
-<<<<<<< HEAD
-=======
 import com.android.settings.Settings.AppOpsSummaryActivity;
->>>>>>> 3a6c509d0ee31bc0bb937911682c273005ccd174
 import com.android.settings.SummaryPreference;
 import com.android.settings.Utils;
 import com.android.settings.applications.ProcStatsData.MemInfo;
