@@ -137,7 +137,8 @@ public final class BluetoothNameDialogFragment extends DialogFragment implements
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    if (v.length() != 0 && !(v.getText().toString().trim().isEmpty())) // Rejecting Empty String
+                    // Rejecting Empty String
+                    if (v.length() != 0 && !(v.getText().toString().trim().isEmpty()))
                     {
                         setDeviceName(v.getText().toString().trim());
                     }

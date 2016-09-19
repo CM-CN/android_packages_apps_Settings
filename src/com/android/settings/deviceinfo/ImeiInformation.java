@@ -15,26 +15,23 @@
  */
 package com.android.settings.deviceinfo;
 
-import com.android.internal.logging.MetricsLogger;
-import com.android.internal.telephony.ConfigResourceUtil;
-import com.android.internal.telephony.Phone;
-import com.android.internal.telephony.PhoneConstants;
-import com.android.internal.telephony.PhoneFactory;
-
-import android.app.ActionBar;
 import android.content.Context;
 import android.os.Bundle;
-import android.preference.Preference;
-import android.preference.PreferenceActivity;
-import android.preference.PreferenceScreen;
+import android.support.v7.preference.Preference;
+import android.support.v7.preference.PreferenceScreen;
+import android.telephony.CarrierConfigManager;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
-import android.view.MenuItem;
-import com.android.settings.InstrumentedPreferenceActivity;
-import com.android.settings.R;
 
-public class ImeiInformation extends InstrumentedPreferenceActivity {
+import com.android.internal.logging.MetricsProto.MetricsEvent;
+import com.android.internal.telephony.Phone;
+import com.android.internal.telephony.PhoneConstants;
+import com.android.internal.telephony.PhoneFactory;
+import com.android.settings.R;
+import com.android.settings.SettingsPreferenceFragment;
+
+public class ImeiInformation extends SettingsPreferenceFragment {
 
     private static final String KEY_PRL_VERSION = "prl_version";
     private static final String KEY_MIN_NUMBER = "min_number";
@@ -48,26 +45,12 @@ public class ImeiInformation extends InstrumentedPreferenceActivity {
     private static final int IMEI_14_DIGIT = 14;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mSubscriptionManager = SubscriptionManager.from(this);
+        mSubscriptionManager = SubscriptionManager.from(getContext());
         final TelephonyManager telephonyManager =
             (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
         initPreferenceScreen(telephonyManager.getSimCount());
-
-        ActionBar actionBar = getActionBar();
-        if (actionBar != null) {
-            actionBar.setDisplayHomeAsUpEnabled(true);
-        }
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home) {
-            finish();
-            return true;
-        }
-        return false;
     }
 
     // Since there are multiple phone for dsds, therefore need to show information for different
@@ -83,13 +66,19 @@ public class ImeiInformation extends InstrumentedPreferenceActivity {
 
     private void setPreferenceValue(int phoneId) {
         final Phone phone = PhoneFactory.getPhone(phoneId);
-        ConfigResourceUtil mConfigResUtil = new ConfigResourceUtil();
         String imeiStr =  null;
-
         boolean enable14DigitImei = false;
         try {
-            enable14DigitImei = mConfigResUtil.getBooleanValue(phone.getContext(),
+            CarrierConfigManager configManager =
+                    (CarrierConfigManager) getContext().getSystemService(
+                     Context.CARRIER_CONFIG_SERVICE);
+            int[] subIds = SubscriptionManager.getSubId(phoneId);
+            if (configManager != null &&
+                    configManager.getConfigForSubId(subIds[0]) != null) {
+                enable14DigitImei =
+                        configManager.getConfigForSubId(subIds[0]).getBoolean(
                         "config_enable_display_14digit_imei");
+            }
         } catch(RuntimeException ex) {
             //do Nothing
         }
@@ -123,6 +112,13 @@ public class ImeiInformation extends InstrumentedPreferenceActivity {
                     removePreferenceFromScreen(KEY_ICC_ID);
                 }
             } else {
+                boolean displayIccId = getResources().getBoolean(
+                        R.bool.config_regional_display_icc_id_enable);
+                if (displayIccId) {
+                    setSummaryText(KEY_ICC_ID, phone.getIccSerialNumber());
+                } else {
+                    removePreferenceFromScreen(KEY_ICC_ID);
+                }
                 setSummaryText(KEY_IMEI, imeiStr);
                 setSummaryText(KEY_IMEI_SV, phone.getDeviceSvn());
                 // device is not CDMA, do not display CDMA features
@@ -130,7 +126,6 @@ public class ImeiInformation extends InstrumentedPreferenceActivity {
                 removePreferenceFromScreen(KEY_PRL_VERSION);
                 removePreferenceFromScreen(KEY_MEID_NUMBER);
                 removePreferenceFromScreen(KEY_MIN_NUMBER);
-                removePreferenceFromScreen(KEY_ICC_ID);
             }
         }
     }
@@ -187,6 +182,6 @@ public class ImeiInformation extends InstrumentedPreferenceActivity {
 
     @Override
     protected int getMetricsCategory() {
-        return MetricsLogger.DEVICEINFO_IMEI_INFORMATION;
+        return MetricsEvent.DEVICEINFO_IMEI_INFORMATION;
     }
 }

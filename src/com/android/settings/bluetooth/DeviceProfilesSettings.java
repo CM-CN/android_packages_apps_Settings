@@ -24,8 +24,8 @@ import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.preference.CheckBoxPreference;
-import android.preference.EditTextPreference;
+import android.support.v7.preference.CheckBoxPreference;
+import android.support.v7.preference.EditTextPreference;
 import android.text.Html;
 import android.text.TextUtils;
 import android.util.Log;
@@ -62,10 +62,9 @@ public final class DeviceProfilesSettings extends DialogFragment implements
     private CachedBluetoothDevice mCachedDevice;
     private LocalBluetoothManager mManager;
     private LocalBluetoothProfileManager mProfileManager;
+
     private ViewGroup mProfileContainer;
     private TextView mProfileLabel;
-    private static final int OK_BUTTON = -1;
-
     private EditTextPreference mDeviceNamePref;
 
     private final HashMap<LocalBluetoothProfile, CheckBoxPreference> mAutoConnectPrefs
@@ -174,16 +173,11 @@ public final class DeviceProfilesSettings extends DialogFragment implements
     private void addPreferencesForProfiles() {
         mProfileContainer.removeAllViews();
         for (LocalBluetoothProfile profile : mCachedDevice.getConnectableProfiles()) {
-            // MAP and PBAP profiles would be added based on permission access
-            if (!((profile instanceof PbapServerProfile) ||
-                (profile instanceof MapProfile))) {
-                CheckBox pref = createProfilePreference(profile);
-                mProfileContainer.addView(pref);
-            }
+            CheckBox pref = createProfilePreference(profile);
+            mProfileContainer.addView(pref);
         }
 
         final int pbapPermission = mCachedDevice.getPhonebookPermissionChoice();
-        Log.d(TAG, "addPreferencesForProfiles: pbapPermission = " + pbapPermission);
         // Only provide PBAP cabability if the client device has requested PBAP.
         if (pbapPermission != CachedBluetoothDevice.ACCESS_UNKNOWN) {
             final PbapServerProfile psp = mManager.getProfileManager().getPbapProfile();
@@ -193,7 +187,6 @@ public final class DeviceProfilesSettings extends DialogFragment implements
 
         final MapProfile mapProfile = mManager.getProfileManager().getMapProfile();
         final int mapPermission = mCachedDevice.getMessagePermissionChoice();
-        Log.d(TAG, "addPreferencesForProfiles: mapPermission = " + mapPermission);
         if (mapPermission != CachedBluetoothDevice.ACCESS_UNKNOWN) {
             CheckBox mapPreference = createProfilePreference(mapProfile);
             mProfileContainer.addView(mapPreference);
@@ -248,6 +241,15 @@ public final class DeviceProfilesSettings extends DialogFragment implements
     private void onProfileClicked(LocalBluetoothProfile profile, CheckBox profilePref) {
         BluetoothDevice device = mCachedDevice.getDevice();
 
+        if (KEY_PBAP_SERVER.equals(profilePref.getTag())) {
+            final int newPermission = mCachedDevice.getPhonebookPermissionChoice()
+                == CachedBluetoothDevice.ACCESS_ALLOWED ? CachedBluetoothDevice.ACCESS_REJECTED
+                : CachedBluetoothDevice.ACCESS_ALLOWED;
+            mCachedDevice.setPhonebookPermissionChoice(newPermission);
+            profilePref.setChecked(newPermission == CachedBluetoothDevice.ACCESS_ALLOWED);
+            return;
+        }
+
         if (!profilePref.isChecked()) {
             // Recheck it, until the dialog is done.
             profilePref.setChecked(true);
@@ -255,11 +257,6 @@ public final class DeviceProfilesSettings extends DialogFragment implements
         } else {
             if (profile instanceof MapProfile) {
                 mCachedDevice.setMessagePermissionChoice(BluetoothDevice.ACCESS_ALLOWED);
-            }
-            if (profile instanceof PbapServerProfile) {
-                mCachedDevice.setPhonebookPermissionChoice(BluetoothDevice.ACCESS_ALLOWED);
-                refreshProfilePreference(profilePref, profile);
-                return;
             }
             if (profile.isPreferred(device)) {
                 // profile is preferred but not connected: disable auto-connect
@@ -294,16 +291,10 @@ public final class DeviceProfilesSettings extends DialogFragment implements
         DialogInterface.OnClickListener disconnectListener =
                 new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
-                // Disconnect only when user has selected OK
-                if (which == OK_BUTTON) {
-                    device.disconnect(profile);
-                    profile.setPreferred(device.getDevice(), false);
-                    if (profile instanceof MapProfile) {
-                        device.setMessagePermissionChoice(BluetoothDevice.ACCESS_REJECTED);
-                    }
-                    if (profile instanceof PbapServerProfile) {
-                        device.setPhonebookPermissionChoice(BluetoothDevice.ACCESS_REJECTED);
-                    }
+                device.disconnect(profile);
+                profile.setPreferred(device.getDevice(), false);
+                if (profile instanceof MapProfile) {
+                    device.setMessagePermissionChoice(BluetoothDevice.ACCESS_REJECTED);
                 }
                 refreshProfilePreference(findProfile(profile.toString()), profile);
             }

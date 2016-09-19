@@ -26,23 +26,22 @@ import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.NetworkInfo;
+import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
-import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pGroup;
 import android.net.wifi.p2p.WifiP2pGroupList;
+import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.net.wifi.p2p.WifiP2pManager.PeerListListener;
 import android.net.wifi.p2p.WifiP2pManager.PersistentGroupInfoListener;
-import android.net.wifi.WpsInfo;
 import android.os.Bundle;
 import android.os.SystemProperties;
-import android.preference.Preference;
-import android.preference.PreferenceCategory;
-import android.preference.PreferenceGroup;
-import android.preference.PreferenceScreen;
-import android.provider.Settings;
+import android.support.v7.preference.Preference;
+import android.support.v7.preference.PreferenceCategory;
+import android.support.v7.preference.PreferenceGroup;
+import android.support.v7.preference.PreferenceScreen;
 import android.text.InputFilter;
 import android.text.TextUtils;
 import android.util.Log;
@@ -52,9 +51,12 @@ import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.android.internal.logging.MetricsLogger;
+import com.android.internal.logging.MetricsProto.MetricsEvent;
 import com.android.settings.R;
 import com.android.settings.SettingsPreferenceFragment;
+
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 
 /*
  * Displays Wi-fi p2p settings UI
@@ -101,8 +103,6 @@ public class WifiP2pSettings extends SettingsPreferenceFragment
     private WifiP2pDeviceList mPeers = new WifiP2pDeviceList();
 
     private String mSavedDeviceName;
-
-    private int mStaDisconnectedScanIntervalWhenP2pConnected = 180000;
 
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
@@ -304,21 +304,19 @@ public class WifiP2pSettings extends SettingsPreferenceFragment
         preferenceScreen.removeAll();
         preferenceScreen.setOrderingAsAdded(true);
 
-        mThisDevicePref = new Preference(getActivity());
+        mThisDevicePref = new Preference(getPrefContext());
         mThisDevicePref.setPersistent(false);
         mThisDevicePref.setSelectable(false);
         preferenceScreen.addPreference(mThisDevicePref);
 
-        mPeersGroup = new PreferenceCategory(getActivity());
+        mPeersGroup = new PreferenceCategory(getPrefContext());
         mPeersGroup.setTitle(R.string.wifi_p2p_peer_devices);
         preferenceScreen.addPreference(mPeersGroup);
 
-        mPersistentGroup = new PreferenceCategory(getActivity());
+        mPersistentGroup = new PreferenceCategory(getPrefContext());
         mPersistentGroup.setTitle(R.string.wifi_p2p_remembered_groups);
         preferenceScreen.addPreference(mPersistentGroup);
-        Settings.Global.putInt(getContentResolver(),
-            Settings.Global.WIFI_SCAN_INTERVAL_WHEN_P2P_CONNECTED_MS,
-            mStaDisconnectedScanIntervalWhenP2pConnected);
+
         super.onActivityCreated(savedInstanceState);
     }
 
@@ -386,7 +384,7 @@ public class WifiP2pSettings extends SettingsPreferenceFragment
     }
 
     @Override
-    public boolean onPreferenceTreeClick(PreferenceScreen screen, Preference preference) {
+    public boolean onPreferenceTreeClick(Preference preference) {
         if (preference instanceof WifiP2pPeer) {
             mSelectedWifiPeer = (WifiP2pPeer) preference;
             if (mSelectedWifiPeer.device.status == WifiP2pDevice.CONNECTED) {
@@ -428,7 +426,7 @@ public class WifiP2pSettings extends SettingsPreferenceFragment
             mSelectedGroup = (WifiP2pPersistentGroup) preference;
             showDialog(DIALOG_DELETE_GROUP);
         }
-        return super.onPreferenceTreeClick(screen, preference);
+        return super.onPreferenceTreeClick(preference);
     }
 
     @Override
@@ -497,7 +495,7 @@ public class WifiP2pSettings extends SettingsPreferenceFragment
 
     @Override
     protected int getMetricsCategory() {
-        return MetricsLogger.WIFI_P2P;
+        return MetricsEvent.WIFI_P2P;
     }
 
     @Override
@@ -525,12 +523,45 @@ public class WifiP2pSettings extends SettingsPreferenceFragment
         }
         if (DBG) Log.d(TAG, " mConnectedDevices " + mConnectedDevices);
     }
-
+    private String utfToString(String utf) {
+        int value;
+        byte[] utfBytes = utf.getBytes();
+        ByteBuffer decodedBytes = ByteBuffer.allocate(utf.length());
+        int size = 0;
+        for (int i = 0; i < utfBytes.length; i++) {
+            if ((utfBytes[i] == '\\') && (utfBytes[i + 1] == 'x')) {
+               value = Integer.parseInt(utf.substring(i + 2, i + 4), 16);
+               decodedBytes.put((byte) value);
+               i = i + 3;
+            } else {
+               decodedBytes.put(utfBytes[i]);
+            }
+            size++;
+        }
+        try {
+            ByteBuffer sink = ByteBuffer.allocate(size);
+            for (int j = 0; j < size; j++) {
+                sink.put(decodedBytes.get(j));
+            }
+            return new String(sink.array(), "UTF-8");
+        } catch (UnsupportedEncodingException uee) {
+            uee.printStackTrace();
+        }
+        return null;
+    }
     @Override
     public void onPersistentGroupInfoAvailable(WifiP2pGroupList groups) {
+        CharSequence cs = "\\x";
         mPersistentGroup.removeAll();
 
         for (WifiP2pGroup group: groups.getGroupList()) {
+            String networkName = group.getNetworkName();
+            if (networkName.contains(cs)){
+                String string = utfToString(networkName);
+                if (string != null){
+                    group.setNetworkName(string);
+                }
+            }
             if (DBG) Log.d(TAG, " group " + group);
             WifiP2pPersistentGroup wppg = new WifiP2pPersistentGroup(getActivity(), group);
             mPersistentGroup.addPreference(wppg);

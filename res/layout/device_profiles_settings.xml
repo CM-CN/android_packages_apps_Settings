@@ -52,14 +52,10 @@
         android:textAppearance="@android:style/TextAppearance.Material.Body1"
         android:textColor="?android:attr/textColorSecondary" />
 
-    <ScrollView
+    <LinearLayout
+        android:id="@+id/profiles_section"
+        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-        <LinearLayout
-             android:id="@+id/profiles_section"
-             android:orientation="vertical"
-             android:layout_width="match_parent"
-             android:layout_height="wrap_content" />
-     </ScrollView>
+        android:layout_height="wrap_content" />
 
 </LinearLayout>

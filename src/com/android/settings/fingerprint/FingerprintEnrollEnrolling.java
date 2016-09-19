@@ -32,6 +32,7 @@ import android.graphics.drawable.AnimatedVectorDrawable;
 import android.graphics.drawable.Drawable;
 import android.hardware.fingerprint.FingerprintManager;
 import android.os.Bundle;
+import android.os.UserHandle;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.AnimationUtils;
@@ -40,7 +41,7 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.android.internal.logging.MetricsLogger;
+import com.android.internal.logging.MetricsProto.MetricsEvent;
 import com.android.settings.ChooseLockSettingsHelper;
 import com.android.settings.R;
 
@@ -50,7 +51,7 @@ import com.android.settings.R;
 public class FingerprintEnrollEnrolling extends FingerprintEnrollBase
         implements FingerprintEnrollSidecar.Listener {
 
-    private static final String TAG_SIDECAR = "sidecar";
+    static final String TAG_SIDECAR = "sidecar";
 
     private static final int PROGRESS_BAR_MAX = 10000;
     private static final int FINISH_DELAY = 250;
@@ -167,11 +168,28 @@ public class FingerprintEnrollEnrolling extends FingerprintEnrollBase
     @Override
     protected void onStop() {
         super.onStop();
-        mSidecar.setListener(null);
+        if (mSidecar != null) {
+            mSidecar.setListener(null);
+        }
         stopIconAnimation();
         if (!isChangingConfigurations()) {
+            if (mSidecar != null) {
+                mSidecar.cancelEnrollment();
+                getFragmentManager().beginTransaction().remove(mSidecar).commitAllowingStateLoss();
+            }
             finish();
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (mSidecar != null) {
+            mSidecar.setListener(null);
+            mSidecar.cancelEnrollment();
+            getFragmentManager().beginTransaction().remove(mSidecar).commitAllowingStateLoss();
+            mSidecar = null;
+        }
+        super.onBackPressed();
     }
 
     private void animateProgress(int progress) {
@@ -219,6 +237,9 @@ public class FingerprintEnrollEnrolling extends FingerprintEnrollBase
         Intent intent = getFinishIntent();
         intent.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
         intent.putExtra(ChooseLockSettingsHelper.EXTRA_KEY_CHALLENGE_TOKEN, token);
+        if (mUserId != UserHandle.USER_NULL) {
+            intent.putExtra(Intent.EXTRA_USER_ID, mUserId);
+        }
         startActivity(intent);
         finish();
     }
@@ -403,7 +424,7 @@ public class FingerprintEnrollEnrolling extends FingerprintEnrollBase
 
     @Override
     protected int getMetricsCategory() {
-        return MetricsLogger.FINGERPRINT_ENROLLING;
+        return MetricsEvent.FINGERPRINT_ENROLLING;
     }
 
     public static class IconTouchDialog extends DialogFragment {

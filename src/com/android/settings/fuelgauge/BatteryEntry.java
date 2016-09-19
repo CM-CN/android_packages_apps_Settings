@@ -157,7 +157,7 @@ public class BatteryEntry {
                 break;
             case FLASHLIGHT:
                 name = context.getResources().getString(R.string.power_flashlight);
-                iconId = R.drawable.ic_power_flashlight;
+                iconId = R.drawable.ic_settings_display;
                 break;
             case APP:
                 name = sipper.packageWithHighestDrain;

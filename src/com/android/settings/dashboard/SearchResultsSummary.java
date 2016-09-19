@@ -36,7 +36,9 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.TextView;
+
 import com.android.internal.logging.MetricsLogger;
+import com.android.internal.logging.MetricsProto.MetricsEvent;
 import com.android.settings.InstrumentedFragment;
 import com.android.settings.R;
 import com.android.settings.SettingsActivity;
@@ -83,7 +85,7 @@ public class SearchResultsSummary extends InstrumentedFragment {
         @Override
         protected void onPostExecute(Cursor cursor) {
             if (!isCancelled()) {
-                MetricsLogger.action(getContext(), MetricsLogger.ACTION_SEARCH_RESULTS,
+                MetricsLogger.action(getContext(), MetricsEvent.ACTION_SEARCH_RESULTS,
                         cursor.getCount());
                 setResultsCursor(cursor);
                 setResultsVisibility(cursor.getCount() > 0);
@@ -236,9 +238,7 @@ public class SearchResultsSummary extends InstrumentedFragment {
 
                 mShowResults = true;
                 mQuery = cursor.getString(0);
-                if (mSearchView != null) {
-                    mSearchView.setQuery(mQuery, false);
-                }
+                mSearchView.setQuery(mQuery, false);
             }
         });
         mSuggestionsListView.addHeaderView(
@@ -251,7 +251,7 @@ public class SearchResultsSummary extends InstrumentedFragment {
 
     @Override
     protected int getMetricsCategory() {
-        return MetricsLogger.DASHBOARD_SEARCH_RESULTS;
+        return MetricsEvent.DASHBOARD_SEARCH_RESULTS;
     }
 
     @Override

@@ -16,8 +16,6 @@
 
 package com.android.settings.widget;
 
-import static android.net.TrafficStats.MB_IN_BYTES;
-
 import android.content.Context;
 import android.content.res.Resources;
 import android.net.NetworkPolicy;
@@ -43,7 +41,10 @@ import com.android.settings.widget.ChartSweepView.OnSweepListener;
 
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Objects;
+
+import static android.net.TrafficStats.MB_IN_BYTES;
 
 /**
  * Specific {@link ChartView} that displays {@link ChartNetworkSeriesView} along
@@ -53,6 +54,7 @@ public class ChartDataUsageView extends ChartView {
 
     private static final int MSG_UPDATE_AXIS = 100;
     private static final long DELAY_MILLIS = 250;
+    private static final String TAG = "DataUsage";
 
     private ChartGridView mGrid;
     private ChartNetworkSeriesView mSeries;
@@ -60,6 +62,8 @@ public class ChartDataUsageView extends ChartView {
 
     private NetworkStatsHistory mHistory;
 
+    private ChartSweepView mSweepLeft;
+    private ChartSweepView mSweepRight;
     private ChartSweepView mSweepWarning;
     private ChartSweepView mSweepLimit;
 
@@ -72,6 +76,7 @@ public class ChartDataUsageView extends ChartView {
     private long mVertMax;
 
     public interface DataUsageChartListener {
+        public void onInspectRangeChanged();
         public void onWarningChanged();
         public void onLimitChanged();
         public void requestWarningEdit();
@@ -114,19 +119,35 @@ public class ChartDataUsageView extends ChartView {
         mDetailSeries = (ChartNetworkSeriesView) findViewById(R.id.detail_series);
         mDetailSeries.setVisibility(View.GONE);
 
+        mSweepLeft = (ChartSweepView) findViewById(R.id.sweep_left);
+        mSweepLeft.setVisibility(View.GONE);
+        mSweepRight = (ChartSweepView) findViewById(R.id.sweep_right);
+        mSweepRight.setVisibility(View.GONE);
         mSweepLimit = (ChartSweepView) findViewById(R.id.sweep_limit);
         mSweepWarning = (ChartSweepView) findViewById(R.id.sweep_warning);
 
         // prevent sweeps from crossing each other
+        mSweepLeft.setValidRangeDynamic(null, mSweepRight);
+        mSweepRight.setValidRangeDynamic(mSweepLeft, null);
         mSweepWarning.setValidRangeDynamic(null, mSweepLimit);
         mSweepLimit.setValidRangeDynamic(mSweepWarning, null);
 
         // mark neighbors for checking touch events against
-        mSweepLimit.setNeighbors(mSweepWarning);
-        mSweepWarning.setNeighbors(mSweepLimit);
+        mSweepLeft.setNeighbors(mSweepRight);
+        mSweepRight.setNeighbors(mSweepLeft);
+        mSweepLimit.setNeighbors(mSweepWarning, mSweepLeft, mSweepRight);
+        mSweepWarning.setNeighbors(mSweepLimit, mSweepLeft, mSweepRight);
 
+        mSweepLeft.addOnSweepListener(mHorizListener);
+        mSweepRight.addOnSweepListener(mHorizListener);
         mSweepWarning.addOnSweepListener(mVertListener);
         mSweepLimit.addOnSweepListener(mVertListener);
+
+        // TODO: make time sweeps adjustable through dpad
+        mSweepLeft.setClickable(false);
+        mSweepLeft.setFocusable(false);
+        mSweepRight.setClickable(false);
+        mSweepRight.setFocusable(false);
 
         mSweepWarning.setDragInterval(5 * MB_IN_BYTES);
         mSweepLimit.setDragInterval(5 * MB_IN_BYTES);
@@ -135,6 +156,8 @@ public class ChartDataUsageView extends ChartView {
         mGrid.init(mHoriz, mVert);
         mSeries.init(mHoriz, mVert);
         mDetailSeries.init(mHoriz, mVert);
+        mSweepLeft.init(mHoriz);
+        mSweepRight.init(mHoriz);
         mSweepWarning.init(mVert);
         mSweepLimit.init(mVert);
 
@@ -167,29 +190,27 @@ public class ChartDataUsageView extends ChartView {
     }
 
     public void bindNetworkPolicy(NetworkPolicy policy) {
-        final long warningBytes, limitBytes;
-
         if (policy == null) {
-            warningBytes = NetworkPolicy.LIMIT_DISABLED;
-            limitBytes = NetworkPolicy.LIMIT_DISABLED;
-        } else {
-            warningBytes = policy.warningBytes;
-            limitBytes = policy.limitBytes;
+            mSweepLimit.setVisibility(View.INVISIBLE);
+            mSweepLimit.setValue(-1);
+            mSweepWarning.setVisibility(View.INVISIBLE);
+            mSweepWarning.setValue(-1);
+            return;
         }
 
-        if (limitBytes != NetworkPolicy.LIMIT_DISABLED) {
+        if (policy.limitBytes != NetworkPolicy.LIMIT_DISABLED) {
             mSweepLimit.setVisibility(View.VISIBLE);
             mSweepLimit.setEnabled(true);
-            mSweepLimit.setValue(limitBytes);
+            mSweepLimit.setValue(policy.limitBytes);
         } else {
             mSweepLimit.setVisibility(View.INVISIBLE);
             mSweepLimit.setEnabled(false);
             mSweepLimit.setValue(-1);
         }
 
-        if (warningBytes != NetworkPolicy.WARNING_DISABLED) {
+        if (policy.warningBytes != NetworkPolicy.WARNING_DISABLED) {
             mSweepWarning.setVisibility(View.VISIBLE);
-            mSweepWarning.setValue(warningBytes);
+            mSweepWarning.setValue(policy.warningBytes);
         } else {
             mSweepWarning.setVisibility(View.INVISIBLE);
             mSweepWarning.setValue(-1);
@@ -225,7 +246,7 @@ public class ChartDataUsageView extends ChartView {
         final long maxSweep = Math.max(mSweepWarning.getValue(), mSweepLimit.getValue());
         final long maxSeries = Math.max(mSeries.getMaxVisible(), mDetailSeries.getMaxVisible());
         final long maxVisible = Math.max(maxSeries, maxSweep) * 12 / 10;
-        final long maxDefault = Math.max(maxVisible, 20 * MB_IN_BYTES);
+        final long maxDefault = Math.max(maxVisible, 50 * MB_IN_BYTES);
         newMax = Math.max(maxDefault, newMax);
 
         // only invalidate when vertMax actually changed
@@ -282,6 +303,23 @@ public class ChartDataUsageView extends ChartView {
         final boolean estimateVisible = (maxEstimate >= interestLine * 7 / 10);
         mSeries.setEstimateVisible(estimateVisible);
     }
+
+    private OnSweepListener mHorizListener = new OnSweepListener() {
+        @Override
+        public void onSweep(ChartSweepView sweep, boolean sweepDone) {
+            updatePrimaryRange();
+
+            // update detail list only when done sweeping
+            if (sweepDone && mListener != null) {
+                mListener.onInspectRangeChanged();
+            }
+        }
+
+        @Override
+        public void requestEdit(ChartSweepView sweep) {
+            // ignored
+        }
+    };
 
     private void sendUpdateAxisDelayed(ChartSweepView sweep, boolean force) {
         if (force || !mHandler.hasMessages(MSG_UPDATE_AXIS, sweep)) {
@@ -347,6 +385,14 @@ public class ChartDataUsageView extends ChartView {
         return mInspectEnd;
     }
 
+    public long getInspectLeft() {
+        return mSweepLeft.getValue();
+    }
+
+    public long getInspectRight() {
+        return mSweepRight.getValue();
+    }
+
     public long getWarningBytes() {
         return mSweepWarning.getLabelValue();
     }
@@ -355,12 +401,21 @@ public class ChartDataUsageView extends ChartView {
         return mSweepLimit.getLabelValue();
     }
 
+    private long getHistoryStart() {
+        return mHistory != null ? mHistory.getStart() : Long.MAX_VALUE;
+    }
+
+    private long getHistoryEnd() {
+        return mHistory != null ? mHistory.getEnd() : Long.MIN_VALUE;
+    }
+
     /**
      * Set the exact time range that should be displayed, updating how
      * {@link ChartNetworkSeriesView} paints. Moves inspection ranges to be the
      * last "week" of available data, without triggering listener events.
      */
-    public void setVisibleRange(long visibleStart, long visibleEnd) {
+    public void setVisibleRange(long visibleStart, long visibleEnd, long selectLeft,
+            long selectRight) {
         final boolean changed = mHoriz.setBounds(visibleStart, visibleEnd);
         mGrid.setBounds(visibleStart, visibleEnd);
         mSeries.setBounds(visibleStart, visibleEnd);
@@ -369,6 +424,28 @@ public class ChartDataUsageView extends ChartView {
         mInspectStart = visibleStart;
         mInspectEnd = visibleEnd;
 
+        final long historyStart = getHistoryStart();
+        final long historyEnd = getHistoryEnd();
+
+        final long validStart = historyStart == Long.MAX_VALUE ? visibleStart
+                : Math.max(visibleStart, historyStart);
+        final long validEnd = historyEnd == Long.MIN_VALUE ? visibleEnd
+                : Math.min(visibleEnd, historyEnd);
+
+        mSweepLeft.setValidRange(visibleStart, visibleEnd);
+        mSweepRight.setValidRange(visibleStart, visibleEnd);
+
+        // default sweeps to current week
+        final long halfRange = (visibleEnd + visibleStart) / 2;
+        final long sweepMax = validEnd;
+        final long sweepMin = Math.max(visibleStart, (sweepMax - DateUtils.WEEK_IN_MILLIS));
+
+        mSweepLeft.setValue((selectLeft >= visibleStart && selectLeft <= visibleEnd)
+                ? selectLeft : sweepMin);
+        mSweepRight.setValue((selectRight >= visibleStart && selectRight <= visibleEnd)
+                ? selectRight : sweepMax);
+        Log.d(TAG, "sweepMax" + new Date(sweepMax).toString()+ "sweepMin"
+                + new Date(sweepMin).toString());
         requestLayout();
         if (changed) {
             mSeries.invalidatePath();
@@ -381,10 +458,15 @@ public class ChartDataUsageView extends ChartView {
     }
 
     private void updatePrimaryRange() {
+        final long left = mSweepLeft.getValue();
+        final long right = mSweepRight.getValue();
         // prefer showing primary range on detail series, when available
         if (mDetailSeries.getVisibility() == View.VISIBLE) {
+            mDetailSeries.setPrimaryRange(left, right);
+            mSeries.setPrimaryRange(0, 0);
             mSeries.setSecondary(true);
         } else {
+            mSeries.setPrimaryRange(left, right);
             mSeries.setSecondary(false);
         }
     }
@@ -605,5 +687,10 @@ public class ChartDataUsageView extends ChartView {
         i++;
 
         return i > 0 ? i : Long.MAX_VALUE;
+    }
+
+    public void setDateSelectionSweepVisible(int visible) {
+        mSweepLeft.setVisibility(visible);
+        mSweepRight.setVisibility(visible);
     }
 }

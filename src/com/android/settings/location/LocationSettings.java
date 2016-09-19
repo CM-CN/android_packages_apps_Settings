@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2011 The Android Open Source Project
- * Copyright (C) 2015 The CyanogenMod Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,44 +16,45 @@
 
 package com.android.settings.location;
 
-import static cyanogenmod.hardware.CMHardwareManager.FEATURE_LONG_TERM_ORBITS;
-
-import android.app.AlarmManager;
-import android.app.PendingIntent;
+import android.app.Activity;
+import android.app.admin.DevicePolicyManager;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.location.SettingInjectorService;
 import android.os.Bundle;
 import android.os.UserHandle;
 import android.os.UserManager;
-import android.preference.Preference;
-import android.preference.PreferenceCategory;
-import android.preference.PreferenceGroup;
-import android.preference.PreferenceManager;
-import android.preference.PreferenceScreen;
-import android.preference.SwitchPreference;
-import android.preference.Preference.OnPreferenceChangeListener;
+import android.provider.Settings;
+import android.support.v7.preference.Preference;
+import android.support.v7.preference.PreferenceCategory;
+import android.support.v7.preference.PreferenceGroup;
+import android.support.v7.preference.PreferenceScreen;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Switch;
-import com.android.internal.logging.MetricsLogger;
+import com.android.internal.logging.MetricsProto.MetricsEvent;
+import com.android.settings.DimmableIconPreference;
 import com.android.settings.R;
 import com.android.settings.SettingsActivity;
 import com.android.settings.Utils;
-import com.android.settings.cyanogenmod.LtoService;
+import com.android.settings.applications.InstalledAppDetails;
+import com.android.settings.dashboard.SummaryLoader;
 import com.android.settings.widget.SwitchBar;
+import com.android.settingslib.RestrictedLockUtils;
+import com.android.settingslib.RestrictedSwitchPreference;
+import com.android.settingslib.location.RecentLocationApps;
 
-import cyanogenmod.hardware.CMHardwareManager;
-
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+
+import static com.android.settingslib.RestrictedLockUtils.EnforcedAdmin;
 
 /**
  * System location settings (Settings &gt; Location). The screen has three parts:
@@ -82,21 +82,15 @@ import java.util.List;
  * implementation.
  */
 public class LocationSettings extends LocationSettingsBase
-        implements SwitchBar.OnSwitchChangeListener, OnPreferenceChangeListener {
+        implements SwitchBar.OnSwitchChangeListener {
 
     private static final String TAG = "LocationSettings";
 
     /**
-     * Key for managed profile location preference category. Category is shown only
-     * if there is a managed profile
+     * Key for managed profile location switch preference. Shown only
+     * if there is a managed profile.
      */
-    private static final String KEY_MANAGED_PROFILE_CATEGORY = "managed_profile_location_category";
-    /**
-     * Key for managed profile location preference. Note it used to be a switch pref and we had to
-     * keep the key as strings had been submitted for string freeze before the decision to
-     * demote this to a simple preference was made. TODO: Candidate for refactoring.
-     */
-    private static final String KEY_MANAGED_PROFILE_PREFERENCE = "managed_profile_location_switch";
+    private static final String KEY_MANAGED_PROFILE_SWITCH = "managed_profile_location_switch";
     /** Key for preference screen "Mode" */
     private static final String KEY_LOCATION_MODE = "location_mode";
     /** Key for preference category "Recent location requests" */
@@ -106,16 +100,12 @@ public class LocationSettings extends LocationSettingsBase
 
     private static final int MENU_SCANNING = Menu.FIRST;
 
-    /** Key for preference LTO over Wi-Fi only */
-    public static final String KEY_LTO_DOWNLOAD_DATA_WIFI_ONLY = "lto_download_data_wifi_only";
-
     private SwitchBar mSwitchBar;
     private Switch mSwitch;
     private boolean mValidListener = false;
     private UserHandle mManagedProfile;
-    private Preference mManagedProfilePreference;
+    private RestrictedSwitchPreference mManagedProfileSwitch;
     private Preference mLocationMode;
-    private SwitchPreference mLtoDownloadDataWifiOnly;
     private PreferenceCategory mCategoryRecentLocationRequests;
     /** Receives UPDATE_INTENT  */
     private BroadcastReceiver mReceiver;
@@ -124,7 +114,7 @@ public class LocationSettings extends LocationSettingsBase
 
     @Override
     protected int getMetricsCategory() {
-        return MetricsLogger.LOCATION;
+        return MetricsEvent.LOCATION;
     }
 
     @Override
@@ -134,10 +124,10 @@ public class LocationSettings extends LocationSettingsBase
         final SettingsActivity activity = (SettingsActivity) getActivity();
         mUm = (UserManager) activity.getSystemService(Context.USER_SERVICE);
 
+        setHasOptionsMenu(true);
         mSwitchBar = activity.getSwitchBar();
         mSwitch = mSwitchBar.getSwitch();
         mSwitchBar.show();
-        setHasOptionsMenu(true);
     }
 
     @Override
@@ -209,26 +199,31 @@ public class LocationSettings extends LocationSettingsBase
                     }
                 });
 
-        mLtoDownloadDataWifiOnly =
-                (SwitchPreference) root.findPreference(KEY_LTO_DOWNLOAD_DATA_WIFI_ONLY);
-        if (mLtoDownloadDataWifiOnly != null) {
-            if (!isLtoSupported(activity) || !checkGpsDownloadWiFiOnly(activity)) {
-                root.removePreference(mLtoDownloadDataWifiOnly);
-                mLtoDownloadDataWifiOnly = null;
-            } else {
-                mLtoDownloadDataWifiOnly.setOnPreferenceChangeListener(this);
-            }
-        }
-
         mCategoryRecentLocationRequests =
                 (PreferenceCategory) root.findPreference(KEY_RECENT_LOCATION_REQUESTS);
         RecentLocationApps recentApps = new RecentLocationApps(activity);
-        List<Preference> recentLocationRequests = recentApps.getAppList();
+        List<RecentLocationApps.Request> recentLocationRequests = recentApps.getAppList();
+        List<Preference> recentLocationPrefs = new ArrayList<>(recentLocationRequests.size());
+        for (final RecentLocationApps.Request request : recentLocationRequests) {
+            DimmableIconPreference pref = new DimmableIconPreference(getPrefContext(),
+                    request.contentDescription);
+            pref.setIcon(request.icon);
+            pref.setTitle(request.label);
+            if (request.isHighBattery) {
+                pref.setSummary(R.string.location_high_battery_use);
+            } else {
+                pref.setSummary(R.string.location_low_battery_use);
+            }
+            pref.setOnPreferenceClickListener(
+                    new PackageEntryClickedListener(request.packageName, request.userHandle));
+            recentLocationPrefs.add(pref);
+
+        }
         if (recentLocationRequests.size() > 0) {
-            addPreferencesSorted(recentLocationRequests, mCategoryRecentLocationRequests);
+            addPreferencesSorted(recentLocationPrefs, mCategoryRecentLocationRequests);
         } else {
             // If there's no item to display, add a "No recent apps" item.
-            Preference banner = new Preference(activity);
+            Preference banner = new Preference(getPrefContext());
             banner.setLayoutResource(R.layout.location_list_no_item);
             banner.setTitle(R.string.location_no_recent_apps);
             banner.setSelectable(false);
@@ -255,20 +250,42 @@ public class LocationSettings extends LocationSettingsBase
         mManagedProfile = Utils.getManagedProfile(mUm);
         if (mManagedProfile == null) {
             // There is no managed profile
-            root.removePreference(root.findPreference(KEY_MANAGED_PROFILE_CATEGORY));
-            mManagedProfilePreference = null;
+            root.removePreference(root.findPreference(KEY_MANAGED_PROFILE_SWITCH));
+            mManagedProfileSwitch = null;
         } else {
-            mManagedProfilePreference = root.findPreference(KEY_MANAGED_PROFILE_PREFERENCE);
-            mManagedProfilePreference.setOnPreferenceClickListener(null);
+            mManagedProfileSwitch = (RestrictedSwitchPreference)root
+                    .findPreference(KEY_MANAGED_PROFILE_SWITCH);
+            mManagedProfileSwitch.setOnPreferenceClickListener(null);
         }
     }
 
-    private void changeManagedProfileLocationAccessStatus(boolean enabled, int summaryResId) {
-        if (mManagedProfilePreference == null) {
+    private void changeManagedProfileLocationAccessStatus(boolean mainSwitchOn) {
+        if (mManagedProfileSwitch == null) {
             return;
         }
-        mManagedProfilePreference.setEnabled(enabled);
-        mManagedProfilePreference.setSummary(summaryResId);
+        mManagedProfileSwitch.setOnPreferenceClickListener(null);
+        final EnforcedAdmin admin = RestrictedLockUtils.checkIfRestrictionEnforced(getActivity(),
+                UserManager.DISALLOW_SHARE_LOCATION, mManagedProfile.getIdentifier());
+        final boolean isRestrictedByBase = isManagedProfileRestrictedByBase();
+        if (!isRestrictedByBase && admin != null) {
+            mManagedProfileSwitch.setDisabledByAdmin(admin);
+            mManagedProfileSwitch.setChecked(false);
+        } else {
+            boolean enabled = mainSwitchOn;
+            mManagedProfileSwitch.setEnabled(enabled);
+
+            int summaryResId = R.string.switch_off_text;
+            if (!enabled) {
+                mManagedProfileSwitch.setChecked(false);
+            } else {
+                mManagedProfileSwitch.setChecked(!isRestrictedByBase);
+                summaryResId = (isRestrictedByBase ?
+                        R.string.switch_off_text : R.string.switch_on_text);
+                mManagedProfileSwitch.setOnPreferenceClickListener(
+                        mManagedProfileSwitchClickListener);
+            }
+            mManagedProfileSwitch.setSummary(summaryResId);
+        }
     }
 
     /**
@@ -282,7 +299,7 @@ public class LocationSettings extends LocationSettingsBase
             boolean lockdownOnLocationAccess) {
         PreferenceCategory categoryLocationServices =
                 (PreferenceCategory) root.findPreference(KEY_LOCATION_SERVICES);
-        injector = IzatSettingsInjector.getSettingInjector(context);
+        injector = new SettingsInjector(context);
         // If location access is locked down by device policy then we only show injected settings
         // for the primary profile.
         List<Preference> locationServices = injector.getInjectedSettings(lockdownOnLocationAccess ?
@@ -337,34 +354,41 @@ public class LocationSettings extends LocationSettingsBase
         return R.string.help_url_location_access;
     }
 
-    @Override
-    public void onModeChanged(int mode, boolean restricted) {
+    private static int getLocationString(int mode) {
         switch (mode) {
             case android.provider.Settings.Secure.LOCATION_MODE_OFF:
-                mLocationMode.setSummary(R.string.location_mode_location_off_title);
-                break;
+                return R.string.location_mode_location_off_title;
             case android.provider.Settings.Secure.LOCATION_MODE_SENSORS_ONLY:
-                mLocationMode.setSummary(R.string.location_mode_sensors_only_title);
-                break;
+                return R.string.location_mode_sensors_only_title;
             case android.provider.Settings.Secure.LOCATION_MODE_BATTERY_SAVING:
-                mLocationMode.setSummary(R.string.location_mode_battery_saving_title);
-                break;
+                return R.string.location_mode_battery_saving_title;
             case android.provider.Settings.Secure.LOCATION_MODE_HIGH_ACCURACY:
-                mLocationMode.setSummary(R.string.location_mode_high_accuracy_title);
-                break;
-            default:
-                break;
+                return R.string.location_mode_high_accuracy_title;
+        }
+        return 0;
+    }
+
+    @Override
+    public void onModeChanged(int mode, boolean restricted) {
+        int modeDescription = getLocationString(mode);
+        if (modeDescription != 0) {
+            mLocationMode.setSummary(modeDescription);
         }
 
         // Restricted user can't change the location mode, so disable the master switch. But in some
         // corner cases, the location might still be enabled. In such case the master switch should
         // be disabled but checked.
         final boolean enabled = (mode != android.provider.Settings.Secure.LOCATION_MODE_OFF);
+        EnforcedAdmin admin = RestrictedLockUtils.checkIfRestrictionEnforced(getActivity(),
+                UserManager.DISALLOW_SHARE_LOCATION, UserHandle.myUserId());
+        boolean hasBaseUserRestriction = RestrictedLockUtils.hasBaseUserRestriction(getActivity(),
+                UserManager.DISALLOW_SHARE_LOCATION, UserHandle.myUserId());
         // Disable the whole switch bar instead of the switch itself. If we disabled the switch
         // only, it would be re-enabled again if the switch bar is not disabled.
-        mSwitchBar.setEnabled(!restricted);
-        if (mLtoDownloadDataWifiOnly != null) {
-            mLtoDownloadDataWifiOnly.setEnabled(enabled && !restricted);
+        if (!hasBaseUserRestriction && admin != null) {
+            mSwitchBar.setDisabledByAdmin(admin);
+        } else {
+            mSwitchBar.setEnabled(!restricted);
         }
         mLocationMode.setEnabled(enabled && !restricted);
         mCategoryRecentLocationRequests.setEnabled(enabled);
@@ -380,18 +404,7 @@ public class LocationSettings extends LocationSettingsBase
             }
         }
 
-        if (mManagedProfilePreference != null) {
-            if (mUm.hasUserRestriction(UserManager.DISALLOW_SHARE_LOCATION, mManagedProfile)) {
-                changeManagedProfileLocationAccessStatus(false,
-                        R.string.managed_profile_location_switch_lockdown);
-            } else {
-                if (enabled) {
-                    changeManagedProfileLocationAccessStatus(true, R.string.switch_on_text);
-                } else {
-                    changeManagedProfileLocationAccessStatus(false, R.string.switch_off_text);
-                }
-            }
-        }
+        changeManagedProfileLocationAccessStatus(enabled);
 
         // As a safety measure, also reloads on location mode change to ensure the settings are
         // up-to-date even if an affected app doesn't send the setting changed broadcast.
@@ -404,72 +417,86 @@ public class LocationSettings extends LocationSettingsBase
     @Override
     public void onSwitchChanged(Switch switchView, boolean isChecked) {
         if (isChecked) {
-            setLocationMode(android.provider.Settings.Secure.LOCATION_MODE_HIGH_ACCURACY);
+            setLocationMode(android.provider.Settings.Secure.LOCATION_MODE_PREVIOUS);
         } else {
             setLocationMode(android.provider.Settings.Secure.LOCATION_MODE_OFF);
         }
     }
 
-    @Override
-    public boolean onPreferenceChange(Preference preference, Object newValue) {
-        if (mLtoDownloadDataWifiOnly != null && preference.equals(mLtoDownloadDataWifiOnly)) {
-            updateLtoServiceStatus(getActivity(), isLocationModeEnabled(getActivity()));
-        }
-        return true;
-    }
-
-    private static void updateLtoServiceStatus(Context context, boolean start) {
-        Intent intent = new Intent(context, LtoService.class);
-        if (start) {
-            context.startService(intent);
-        } else {
-            context.stopService(intent);
-        }
-    }
-
-    private static boolean checkGpsDownloadWiFiOnly(Context context) {
-        PackageManager pm = context.getPackageManager();
-        boolean supportsTelephony = pm.hasSystemFeature(PackageManager.FEATURE_TELEPHONY);
-        boolean supportsWifi = pm.hasSystemFeature(PackageManager.FEATURE_WIFI);
-        if (!supportsWifi || !supportsTelephony) {
-            SharedPreferences.Editor editor =
-                    PreferenceManager.getDefaultSharedPreferences(context).edit();
-            editor.putBoolean(KEY_LTO_DOWNLOAD_DATA_WIFI_ONLY, supportsWifi);
-            editor.apply();
+    private boolean isManagedProfileRestrictedByBase() {
+        if (mManagedProfile == null) {
             return false;
         }
-        return true;
+        return mUm.hasBaseUserRestriction(UserManager.DISALLOW_SHARE_LOCATION, mManagedProfile);
     }
 
-    public static boolean isLocationModeEnabled(Context context) {
-        int mode = android.provider.Settings.Secure.getInt(context.getContentResolver(),
-                android.provider.Settings.Secure.LOCATION_MODE,
-                android.provider.Settings.Secure.LOCATION_MODE_OFF);
-        return (mode != android.provider.Settings.Secure.LOCATION_MODE_OFF);
-    }
+    private Preference.OnPreferenceClickListener mManagedProfileSwitchClickListener =
+            new Preference.OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
+                    final boolean switchState = mManagedProfileSwitch.isChecked();
+                    mUm.setUserRestriction(UserManager.DISALLOW_SHARE_LOCATION,
+                            !switchState, mManagedProfile);
+                    mManagedProfileSwitch.setSummary(switchState ?
+                            R.string.switch_on_text : R.string.switch_off_text);
+                    return true;
+                }
+            };
 
-    /**
-     * Restore the properties associated with this preference on boot
-     * @param ctx A valid context
-     */
-    public static void restore(final Context context) {
-        if (isLtoSupported(context) && isLocationModeEnabled(context)) {
-            // Check and adjust the value for Gps download data on wifi only
-            checkGpsDownloadWiFiOnly(context);
+    private class PackageEntryClickedListener
+            implements Preference.OnPreferenceClickListener {
+        private String mPackage;
+        private UserHandle mUserHandle;
 
-            // Starts the LtoService, but delayed 2 minutes after boot (this should give a
-            // proper time to start all device services)
-            AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-            Intent intent = new Intent(context, LtoService.class);
-            PendingIntent pi = PendingIntent.getService(context, 0, intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
-            long nextLtoDownload = System.currentTimeMillis() + (1000 * 60 * 2L);
-            am.set(AlarmManager.RTC, nextLtoDownload, pi);
+        public PackageEntryClickedListener(String packageName, UserHandle userHandle) {
+            mPackage = packageName;
+            mUserHandle = userHandle;
+        }
+
+        @Override
+        public boolean onPreferenceClick(Preference preference) {
+            // start new fragment to display extended information
+            Bundle args = new Bundle();
+            args.putString(InstalledAppDetails.ARG_PACKAGE_NAME, mPackage);
+            ((SettingsActivity) getActivity()).startPreferencePanelAsUser(
+                    InstalledAppDetails.class.getName(), args,
+                    R.string.application_info_label, null, mUserHandle);
+            return true;
         }
     }
 
-    private static boolean isLtoSupported(Context context) {
-        final CMHardwareManager hardware = CMHardwareManager.getInstance(context);
-        return hardware != null && hardware.isSupported(FEATURE_LONG_TERM_ORBITS);
+    private static class SummaryProvider implements SummaryLoader.SummaryProvider {
+
+        private final Context mContext;
+        private final SummaryLoader mSummaryLoader;
+
+        public SummaryProvider(Context context, SummaryLoader summaryLoader) {
+            mContext = context;
+            mSummaryLoader = summaryLoader;
+        }
+
+        @Override
+        public void setListening(boolean listening) {
+            if (listening) {
+                int mode = Settings.Secure.getInt(mContext.getContentResolver(),
+                        Settings.Secure.LOCATION_MODE, Settings.Secure.LOCATION_MODE_OFF);
+                if (mode != Settings.Secure.LOCATION_MODE_OFF) {
+                    mSummaryLoader.setSummary(this, mContext.getString(R.string.location_on_summary,
+                            mContext.getString(getLocationString(mode))));
+                } else {
+                    mSummaryLoader.setSummary(this,
+                            mContext.getString(R.string.location_off_summary));
+                }
+            }
+        }
     }
+
+    public static final SummaryLoader.SummaryProviderFactory SUMMARY_PROVIDER_FACTORY
+            = new SummaryLoader.SummaryProviderFactory() {
+        @Override
+        public SummaryLoader.SummaryProvider createSummaryProvider(Activity activity,
+                                                                   SummaryLoader summaryLoader) {
+            return new SummaryProvider(activity, summaryLoader);
+        }
+    };
 }

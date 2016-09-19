@@ -16,6 +16,7 @@
 
 package com.android.settings.location;
 
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -34,7 +35,7 @@ import android.os.Messenger;
 import android.os.SystemClock;
 import android.os.UserHandle;
 import android.os.UserManager;
-import android.preference.Preference;
+import android.support.v7.preference.Preference;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.Xml;
@@ -150,7 +151,7 @@ class SettingsInjector {
      *
      * Duplicates some code from {@link android.content.pm.RegisteredServicesCache}.
      */
-    protected InjectedSetting parseServiceInfo(ResolveInfo service, UserHandle userHandle,
+    private InjectedSetting parseServiceInfo(ResolveInfo service, UserHandle userHandle,
             PackageManager pm) throws XmlPullParserException, IOException {
 
         ServiceInfo si = service.serviceInfo;
@@ -162,6 +163,8 @@ class SettingsInjector {
                         + service);
                 return null;
             }
+        } else if (!DimmableIZatIconPreference.showIzat(mContext, si.packageName)) {
+            return null;
         }
 
         XmlResourceParser parser = null;
@@ -274,7 +277,8 @@ class SettingsInjector {
             // a separate content description.
             badgedAppLabel = null;
         }
-        Preference pref = new DimmableIconPreference(mContext, badgedAppLabel);
+        Preference pref = DimmableIZatIconPreference.
+                                  newInstance(mContext, badgedAppLabel, info);
         pref.setTitle(info.title);
         pref.setSummary(null);
         pref.setIcon(icon);
@@ -299,7 +303,17 @@ class SettingsInjector {
             // Settings > Location.
             Intent settingIntent = new Intent();
             settingIntent.setClassName(mInfo.packageName, mInfo.settingsActivity);
-            settingIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            // Sometimes the user may navigate back to "Settings" and launch another different
+            // injected setting after one injected setting has been launched.
+            //
+            // FLAG_ACTIVITY_CLEAR_TOP allows multiple Activities to stack on each other. When
+            // "back" button is clicked, the user will navigate through all the injected settings
+            // launched before. Such behavior could be quite confusing sometimes.
+            //
+            // In order to avoid such confusion, we use FLAG_ACTIVITY_CLEAR_TASK, which always clear
+            // up all existing injected settings and make sure that "back" button always brings the
+            // user back to "Settings" directly.
+            settingIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             mContext.startActivityAsUser(settingIntent, mInfo.mUserHandle);
             return true;
         }
@@ -464,6 +478,15 @@ class SettingsInjector {
          * preference when the service replies.
          */
         public void startService() {
+            final ActivityManager am = (ActivityManager)
+                    mContext.getSystemService(Context.ACTIVITY_SERVICE);
+            if (!am.isUserRunning(setting.mUserHandle.getIdentifier())) {
+                if (Log.isLoggable(TAG, Log.VERBOSE)) {
+                    Log.v(TAG, "Cannot start service as user "
+                            + setting.mUserHandle.getIdentifier() + " is not running");
+                }
+                return;
+            }
             Handler handler = new Handler() {
                 @Override
                 public void handleMessage(Message msg) {

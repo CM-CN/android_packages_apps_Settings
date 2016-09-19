@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
      Copyright (C) 2014 The Android Open Source Project
-     Copyright (C) 2016 The CyanogenMod Project
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -26,23 +25,15 @@
             android:title="@string/zen_mode_priority_settings_title"
             android:fragment="com.android.settings.notification.ZenModePrioritySettings" />
 
-    <!-- Downtime -->
+    <!-- Automated rules -->
     <PreferenceScreen
             android:key="automation_settings"
             android:title="@string/zen_mode_automation_settings_title"
             android:fragment="com.android.settings.notification.ZenModeAutomationSettings" />
 
-    <!-- Do Not Disturb access -->
-    <Preference
-            android:key="manage_zen_access"
-            android:title="@string/manage_zen_access_title"
-            android:persistent="false"
-            android:fragment="com.android.settings.notification.ZenAccessSettings" />
-
-    <!-- Prevent audio ducking -->
-    <com.android.settings.cyanogenmod.CMGlobalSettingSwitchPreference
-            android:key="zen_disable_ducking_during_media_playback"
-            android:title="@string/interruptions_ignore_while_media_title"
-            android:summary="@string/interruptions_ignore_while_media_summary" />
-
+    <!-- Visual interruptions -->
+    <PreferenceScreen
+            android:key="visual_interruptions_settings"
+            android:title="@string/zen_mode_visual_interruptions_settings_title"
+            android:fragment="com.android.settings.notification.ZenModeVisualInterruptionSettings" />
 </PreferenceScreen>

@@ -19,6 +19,7 @@ package com.android.settings.wifi;
 import android.app.Dialog;
 import android.net.wifi.WifiConfiguration;
 import android.os.Bundle;
+import android.support.v7.preference.PreferenceScreen;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -26,12 +27,12 @@ import android.view.MenuInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.ListView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.android.settings.R;
 import com.android.settings.SetupWizardUtils;
-import com.android.setupwizardlib.SetupWizardListLayout;
+import com.android.setupwizardlib.SetupWizardLayout;
 import com.android.setupwizardlib.view.NavigationBar;
 
 /**
@@ -44,32 +45,33 @@ public class WifiSettingsForSetupWizard extends WifiSettings {
 
     private static final String TAG = "WifiSettingsForSetupWizard";
 
-    private SetupWizardListLayout mLayout;
-    private View mAddOtherNetworkItem;
+    private SetupWizardLayout mLayout;
     private TextView mEmptyFooter;
-    private View mMacAddressFooter;
+    private View mMacAddress;
     private boolean mListLastEmpty = false;
 
     @Override
     public View onCreateView(final LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
-        mLayout = (SetupWizardListLayout)
+        super.onCreateView(inflater, container, savedInstanceState);
+
+        mLayout = (SetupWizardLayout)
                 inflater.inflate(R.layout.setup_wifi_layout, container, false);
-        final ListView list = mLayout.getListView();
 
-        mAddOtherNetworkItem = inflater.inflate(R.layout.setup_wifi_add_network, list, false);
-        list.addFooterView(mAddOtherNetworkItem, null, true);
-        mAddOtherNetworkItem.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (mWifiManager.isWifiEnabled()) {
-                    onAddNetworkPressed();
-                }
-            }
-        });
+        LinearLayout networksLayout = (LinearLayout)
+                mLayout.findViewById(R.id.wifi_networks_layout);
 
-        mMacAddressFooter = inflater.inflate(R.layout.setup_wifi_mac_address, list, false);
-        list.addFooterView(mMacAddressFooter, null, false);
+        View recyclerView = getListView();
+
+        // Remove recyclerView from its parent
+        ViewGroup recyclerViewParent = (ViewGroup) recyclerView.getParent();
+        if (recyclerViewParent != null) {
+            recyclerViewParent.removeView(recyclerView);
+        }
+
+        networksLayout.addView(recyclerView);
+
+        mMacAddress = mLayout.findViewById(R.id.wifi_mac_address_layout);
 
         final NavigationBar navigationBar = mLayout.getNavigationBar();
         if (navigationBar != null) {
@@ -89,12 +91,6 @@ public class WifiSettingsForSetupWizard extends WifiSettings {
         }
 
         updateMacAddress();
-    }
-
-    @Override
-    public void onAccessPointsChanged() {
-        super.onAccessPointsChanged();
-        updateFooter(getPreferenceScreen().getPreferenceCount() == 0);
     }
 
     @Override
@@ -141,26 +137,10 @@ public class WifiSettingsForSetupWizard extends WifiSettings {
     }
 
     @Override
-    protected TextView initEmptyView() {
+    protected TextView initEmptyTextView() {
         final LayoutInflater inflater = LayoutInflater.from(getActivity());
-        mEmptyFooter = (TextView) inflater.inflate(R.layout.setup_wifi_empty, getListView(), false);
+        mEmptyFooter = (TextView) inflater.inflate(R.layout.setup_wifi_empty, mLayout, false);
         return mEmptyFooter;
-    }
-
-    protected void updateFooter(boolean isEmpty) {
-        if (isEmpty != mListLastEmpty && hasListView()) {
-            final ListView list = getListView();
-            list.removeFooterView(mEmptyFooter);
-            list.removeFooterView(mAddOtherNetworkItem);
-            list.removeFooterView(mMacAddressFooter);
-            if (isEmpty) {
-                list.addFooterView(mEmptyFooter, null, false);
-            } else {
-                list.addFooterView(mAddOtherNetworkItem, null, true);
-                list.addFooterView(mMacAddressFooter, null, false);
-            }
-            mListLastEmpty = isEmpty;
-        }
     }
 
     @Override
@@ -186,7 +166,7 @@ public class WifiSettingsForSetupWizard extends WifiSettings {
     }
 
     private void updateMacAddress() {
-        if (mMacAddressFooter != null) {
+        if (mMacAddress != null) {
             String macAddress = null;
             if (mWifiManager != null) {
                 android.net.wifi.WifiInfo connectionInfo = mWifiManager.getConnectionInfo();
@@ -195,7 +175,7 @@ public class WifiSettingsForSetupWizard extends WifiSettings {
                 }
             }
             final TextView macAddressTextView =
-                    (TextView) mMacAddressFooter.findViewById(R.id.mac_address);
+                    (TextView) mMacAddress.findViewById(R.id.mac_address);
             macAddressTextView.setText(!TextUtils.isEmpty(macAddress) ?
                     macAddress : getString(R.string.status_unavailable));
         }

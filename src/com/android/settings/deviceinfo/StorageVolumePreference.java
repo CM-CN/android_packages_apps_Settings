@@ -18,13 +18,12 @@ package com.android.settings.deviceinfo;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
-import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import android.graphics.PorterDuff;
 import android.os.storage.StorageManager;
 import android.os.storage.VolumeInfo;
-import android.preference.Preference;
+import android.support.v7.preference.Preference;
+import android.support.v7.preference.PreferenceViewHolder;
 import android.text.format.Formatter;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -76,10 +75,12 @@ public class StorageVolumePreference extends Preference {
             final String used = Formatter.formatFileSize(context, usedBytes);
             final String total = Formatter.formatFileSize(context, totalBytes);
             setSummary(context.getString(R.string.storage_volume_summary, used, total));
-            mUsedPercent = (int) ((usedBytes * 100) / totalBytes);
+            if (totalBytes > 0) {
+                mUsedPercent = (int) ((usedBytes * 100) / totalBytes);
+            }
 
             if (freeBytes < mStorageManager.getStorageLowBytes(path)) {
-                mColor = context.getColor(R.color.storage_volume_color_warning);
+                mColor = StorageSettings.COLOR_WARNING;
                 icon = context.getDrawable(R.drawable.ic_warning_24dp);
             }
 
@@ -90,7 +91,6 @@ public class StorageVolumePreference extends Preference {
 
         icon.mutate();
         icon.setTint(mColor);
-        icon.setTintMode(PorterDuff.Mode.SRC_ATOP);
         setIcon(icon);
 
         if (volume.getType() == VolumeInfo.TYPE_PUBLIC
@@ -101,13 +101,10 @@ public class StorageVolumePreference extends Preference {
     }
 
     @Override
-    protected void onBindView(View view) {
-
+    public void onBindViewHolder(PreferenceViewHolder view) {
         final ImageView unmount = (ImageView) view.findViewById(R.id.unmount);
-
         if (unmount != null) {
-            unmount.setImageTintList(ColorStateList.valueOf(
-                    getContext().getColor(R.color.eject_icon_tint_color)));
+            unmount.setImageTintList(ColorStateList.valueOf(Color.parseColor("#8a000000")));
             unmount.setOnClickListener(mUnmountListener);
         }
 
@@ -120,7 +117,7 @@ public class StorageVolumePreference extends Preference {
             progress.setVisibility(View.GONE);
         }
 
-        super.onBindView(view);
+        super.onBindViewHolder(view);
     }
 
     private final View.OnClickListener mUnmountListener = new OnClickListener() {

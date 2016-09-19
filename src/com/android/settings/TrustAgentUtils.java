@@ -33,6 +33,8 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 
+import static com.android.settingslib.RestrictedLockUtils.EnforcedAdmin;
+
 public class TrustAgentUtils {
     static final String TAG = "TrustAgentUtils";
 
@@ -55,9 +57,9 @@ public class TrustAgentUtils {
 
     public static class TrustAgentComponentInfo {
         ComponentName componentName;
-        public String title;
+        String title;
         String summary;
-        boolean disabledByAdministrator;
+        EnforcedAdmin admin = null;
     }
 
     public static ComponentName getComponentName(ResolveInfo resolveInfo) {

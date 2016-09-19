@@ -24,9 +24,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.PersistableBundle;
-import android.preference.ListPreference;
-import android.preference.Preference;
-import android.preference.PreferenceScreen;
+import android.support.v7.preference.ListPreference;
+import android.support.v7.preference.Preference;
+import android.support.v7.preference.PreferenceScreen;
 import android.telephony.CarrierConfigManager;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
@@ -37,7 +37,8 @@ import android.widget.TextView;
 import com.android.ims.ImsConfig;
 import com.android.ims.ImsManager;
 import com.android.internal.logging.MetricsLogger;
-import com.android.internal.telephony.imsphone.ImsPhone;
+import com.android.internal.logging.MetricsProto.MetricsEvent;
+import com.android.internal.telephony.Phone;
 import com.android.settings.widget.SwitchBar;
 
 /**
@@ -100,7 +101,7 @@ public class WifiCallingSettings extends SettingsPreferenceFragment
         mSwitchBar.show();
 
         mEmptyView = (TextView) getView().findViewById(android.R.id.empty);
-        getListView().setEmptyView(mEmptyView);
+        setEmptyView(mEmptyView);
         mEmptyView.setText(R.string.wifi_calling_off_explanation);
     }
 
@@ -113,8 +114,8 @@ public class WifiCallingSettings extends SettingsPreferenceFragment
     private void showAlert(Intent intent) {
         Context context = getActivity();
 
-        CharSequence title = intent.getCharSequenceExtra(ImsPhone.EXTRA_KEY_ALERT_TITLE);
-        CharSequence message = intent.getCharSequenceExtra(ImsPhone.EXTRA_KEY_ALERT_MESSAGE);
+        CharSequence title = intent.getCharSequenceExtra(Phone.EXTRA_KEY_ALERT_TITLE);
+        CharSequence message = intent.getCharSequenceExtra(Phone.EXTRA_KEY_ALERT_MESSAGE);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setMessage(message)
@@ -150,7 +151,7 @@ public class WifiCallingSettings extends SettingsPreferenceFragment
 
     @Override
     protected int getMetricsCategory() {
-        return MetricsLogger.WIFI_CALLING;
+        return MetricsEvent.WIFI_CALLING;
     }
 
     @Override
@@ -167,11 +168,19 @@ public class WifiCallingSettings extends SettingsPreferenceFragment
 
         CarrierConfigManager configManager = (CarrierConfigManager)
                 getSystemService(Context.CARRIER_CONFIG_SERVICE);
+        boolean isWifiOnlySupported = true;
         if (configManager != null) {
             PersistableBundle b = configManager.getConfig();
             if (b != null) {
                 mEditableWfcMode = b.getBoolean(CarrierConfigManager.KEY_EDITABLE_WFC_MODE_BOOL);
+                isWifiOnlySupported = b.getBoolean(
+                        CarrierConfigManager.KEY_CARRIER_WFC_SUPPORTS_WIFI_ONLY_BOOL, true);
             }
+        }
+
+        if (!isWifiOnlySupported) {
+            mButtonWfcMode.setEntries(R.array.wifi_calling_mode_choices_without_wifi_only);
+            mButtonWfcMode.setEntryValues(R.array.wifi_calling_mode_values_without_wifi_only);
         }
     }
 
@@ -190,12 +199,6 @@ public class WifiCallingSettings extends SettingsPreferenceFragment
             mValidListener = true;
         }
 
-        if (!isWfcModeSupported()) {
-            android.provider.Settings.Global.putInt(context.getContentResolver(),
-                    android.provider.Settings.Global.WFC_IMS_MODE,
-                    ImsConfig.WfcModeFeatureValueConstants.WIFI_PREFERRED);
-        }
-
         // NOTE: Buttons will be enabled/disabled in mPhoneStateListener
         boolean wfcEnabled = ImsManager.isWfcEnabledByUser(context)
                 && ImsManager.isNonTtyOrTtyOnVolteEnabled(context);
@@ -207,7 +210,7 @@ public class WifiCallingSettings extends SettingsPreferenceFragment
         context.registerReceiver(mIntentReceiver, mIntentFilter);
 
         Intent intent = getActivity().getIntent();
-        if (intent.getBooleanExtra(ImsPhone.EXTRA_KEY_ALERT_SHOW, false)) {
+        if (intent.getBooleanExtra(Phone.EXTRA_KEY_ALERT_SHOW, false)) {
             showAlert(intent);
         }
     }
@@ -253,7 +256,7 @@ public class WifiCallingSettings extends SettingsPreferenceFragment
         mButtonWfcMode.setEnabled(wfcEnabled);
 
         final PreferenceScreen preferenceScreen = getPreferenceScreen();
-        if (wfcEnabled && isWfcModeSupported()) {
+        if (wfcEnabled && ImsManager.displayWfcMode(context, false)) {
             preferenceScreen.addPreference(mButtonWfcMode);
         } else {
             preferenceScreen.removePreference(mButtonWfcMode);
@@ -295,10 +298,5 @@ public class WifiCallingSettings extends SettingsPreferenceFragment
             }
         }
         return resId;
-    }
-
-    private boolean isWfcModeSupported() {
-        return getActivity().getResources().getBoolean(
-                R.bool.config_wfc_mode_supported);
     }
 }

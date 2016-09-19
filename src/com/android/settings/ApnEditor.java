@@ -16,22 +16,26 @@
 
 package com.android.settings;
 
+import static android.app.Activity.RESULT_OK;
+import static android.content.Context.TELEPHONY_SERVICE;
+
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.DialogFragment;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.preference.EditTextPreference;
-import android.preference.ListPreference;
-import android.preference.MultiSelectListPreference;
-import android.preference.Preference;
-import android.preference.SwitchPreference;
 import android.provider.Telephony;
+import android.support.v14.preference.MultiSelectListPreference;
+import android.support.v14.preference.SwitchPreference;
+import android.support.v7.preference.EditTextPreference;
+import android.support.v7.preference.ListPreference;
+import android.support.v7.preference.Preference;
+import android.support.v7.preference.Preference.OnPreferenceChangeListener;
 import android.telephony.ServiceState;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
@@ -39,18 +43,18 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
-import com.android.internal.logging.MetricsLogger;
+import android.view.View;
+import android.view.View.OnKeyListener;
 
-import java.util.ArrayList;
+import com.android.internal.logging.MetricsProto.MetricsEvent;
+
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
-public class ApnEditor extends InstrumentedPreferenceActivity
-        implements SharedPreferences.OnSharedPreferenceChangeListener,
-                    Preference.OnPreferenceChangeListener {
+public class ApnEditor extends SettingsPreferenceFragment
+        implements OnPreferenceChangeListener, OnKeyListener {
 
     private final static String TAG = ApnEditor.class.getSimpleName();
 
@@ -62,13 +66,9 @@ public class ApnEditor extends InstrumentedPreferenceActivity
     private final static String KEY_BEARER_MULTI = "bearer_multi";
     private final static String KEY_MVNO_TYPE = "mvno_type";
 
-    private final static String PROTOCOL_IPV4V6= "IPV4V6";
-
     private static final int MENU_DELETE = Menu.FIRST;
     private static final int MENU_SAVE = Menu.FIRST + 1;
     private static final int MENU_CANCEL = Menu.FIRST + 2;
-    private static final int ERROR_DIALOG_ID = 0;
-    private static final int DUPLICATE_DIALOG_ID = 1;
 
     private static String sNotSet;
     private EditTextPreference mName;
@@ -91,7 +91,6 @@ public class ApnEditor extends InstrumentedPreferenceActivity
     private MultiSelectListPreference mBearerMulti;
     private ListPreference mMvnoType;
     private EditTextPreference mMvnoMatchData;
-    private EditTextPreference mPppNumber;
 
     private String mCurMnc;
     private String mCurMcc;
@@ -134,8 +133,7 @@ public class ApnEditor extends InstrumentedPreferenceActivity
             Telephony.Carriers.BEARER_BITMASK, // 19
             Telephony.Carriers.ROAMING_PROTOCOL, // 20
             Telephony.Carriers.MVNO_TYPE,   // 21
-            Telephony.Carriers.MVNO_MATCH_DATA,  // 22
-            "ppp_number"  // 23
+            Telephony.Carriers.MVNO_MATCH_DATA  // 22
     };
 
     private static final int ID_INDEX = 0;
@@ -160,11 +158,10 @@ public class ApnEditor extends InstrumentedPreferenceActivity
     private static final int ROAMING_PROTOCOL_INDEX = 20;
     private static final int MVNO_TYPE_INDEX = 21;
     private static final int MVNO_MATCH_DATA_INDEX = 22;
-    private static final int PPP_NUMBER_INDEX = 23;
 
 
     @Override
-    protected void onCreate(Bundle icicle) {
+    public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
 
         addPreferencesFromResource(R.xml.apn_editor);
@@ -183,7 +180,6 @@ public class ApnEditor extends InstrumentedPreferenceActivity
         mMcc = (EditTextPreference) findPreference("apn_mcc");
         mMnc = (EditTextPreference) findPreference("apn_mnc");
         mApnType = (EditTextPreference) findPreference("apn_type");
-        mPppNumber = (EditTextPreference) findPreference("apn_ppp_number");
 
         mAuthType = (ListPreference) findPreference(KEY_AUTH_TYPE);
         mAuthType.setOnPreferenceChangeListener(this);
@@ -218,13 +214,22 @@ public class ApnEditor extends InstrumentedPreferenceActivity
         mFirstTime = icicle == null;
 
         if (action.equals(Intent.ACTION_EDIT)) {
-            mUri = intent.getData();
+            Uri uri = intent.getData();
+            if (!uri.isPathPrefixMatch(Telephony.Carriers.CONTENT_URI)) {
+                Log.e(TAG, "Edit request not for carrier table. Uri: " + uri);
+                finish();
+                return;
+            }
+            mUri = uri;
         } else if (action.equals(Intent.ACTION_INSERT)) {
             if (mFirstTime || icicle.getInt(SAVED_POS) == 0) {
-                ContentValues values = new ContentValues();
-                values.put(Telephony.Carriers.PROTOCOL, PROTOCOL_IPV4V6);
-                values.put(Telephony.Carriers.ROAMING_PROTOCOL, PROTOCOL_IPV4V6);
-                mUri = getContentResolver().insert(intent.getData(), values);
+                Uri uri = intent.getData();
+                if (!uri.isPathPrefixMatch(Telephony.Carriers.CONTENT_URI)) {
+                    Log.e(TAG, "Insert request not for carrier table. Uri: " + uri);
+                    finish();
+                    return;
+                }
+                mUri = getContentResolver().insert(uri, new ContentValues());
             } else {
                 mUri = ContentUris.withAppendedId(Telephony.Carriers.CONTENT_URI,
                         icicle.getInt(SAVED_POS));
@@ -251,37 +256,36 @@ public class ApnEditor extends InstrumentedPreferenceActivity
             return;
         }
 
-        mCursor = managedQuery(mUri, sProjection, null, null);
+        mCursor = getActivity().managedQuery(mUri, sProjection, null, null);
         mCursor.moveToFirst();
 
         mTelephonyManager = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+
+        for (int i = 0; i < getPreferenceScreen().getPreferenceCount(); i++) {
+            getPreferenceScreen().getPreference(i).setOnPreferenceChangeListener(this);
+        }
 
         fillUi();
     }
 
     @Override
     protected int getMetricsCategory() {
-        return MetricsLogger.APN_EDITOR;
+        return MetricsEvent.APN_EDITOR;
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        getPreferenceScreen().getSharedPreferences()
-                .registerOnSharedPreferenceChangeListener(this);
     }
 
     @Override
     public void onPause() {
-        getPreferenceScreen().getSharedPreferences()
-                .unregisterOnSharedPreferenceChangeListener(this);
         super.onPause();
     }
 
     private void fillUi() {
         if (mFirstTime) {
             mFirstTime = false;
-            String numeric = mTelephonyManager.getIccOperatorNumericForData(mSubId);
             // Fill in all the values from the db in both text editor and summary
             mName.setText(mCursor.getString(NAME_INDEX));
             mApn.setText(mCursor.getString(APN_INDEX));
@@ -297,6 +301,7 @@ public class ApnEditor extends InstrumentedPreferenceActivity
             mMnc.setText(mCursor.getString(MNC_INDEX));
             mApnType.setText(mCursor.getString(TYPE_INDEX));
             if (mNewApn) {
+                String numeric = mTelephonyManager.getSimOperator(mSubId);
                 // MCC is first 3 chars and then in 2 - 3 chars of MNC
                 if (numeric != null && numeric.length() > 4) {
                     // Country code
@@ -309,7 +314,6 @@ public class ApnEditor extends InstrumentedPreferenceActivity
                     mCurMnc = mnc;
                     mCurMcc = mcc;
                 }
-                mApnType.setText(checkNull(getString(R.string.config_default_new_apn_type)));
             }
             int authVal = mCursor.getInt(AUTH_TYPE_INDEX);
             if (authVal != -1) {
@@ -353,15 +357,9 @@ public class ApnEditor extends InstrumentedPreferenceActivity
                 mMvnoType.setValue(mMvnoTypeStr);
                 mMvnoMatchData.setText(mMvnoMatchDataStr);
             }
-
-            String pppNumber = mCursor.getString(PPP_NUMBER_INDEX);
-            mPppNumber.setText(pppNumber);
-            if (pppNumber == null) {
-                if (!mNewApn) {
-                    getPreferenceScreen().removePreference(mPppNumber);
-                } else if (getResources().getBoolean(R.bool.config_ppp_enabled)) {
-                    getPreferenceScreen().removePreference(mPppNumber);
-                }
+            String localizedName = ApnSettings.getLocalizedName(getActivity(), mCursor,NAME_INDEX);
+            if (!TextUtils.isEmpty(localizedName)) {
+                mName.setText(localizedName);
             }
         }
 
@@ -378,13 +376,6 @@ public class ApnEditor extends InstrumentedPreferenceActivity
         mMcc.setSummary(checkNull(mMcc.getText()));
         mMnc.setSummary(checkNull(mMnc.getText()));
         mApnType.setSummary(checkNull(mApnType.getText()));
-
-        String pppNumber = mPppNumber.getText();
-        if (pppNumber != null) {
-            // Remove this preference if PPP number is not present
-            // in the APN settings
-            mPppNumber.setSummary(checkNull(pppNumber));
-        }
 
         String authVal = mAuthType.getValue();
         if (authVal != null) {
@@ -480,19 +471,20 @@ public class ApnEditor extends InstrumentedPreferenceActivity
             return null;
         } else {
             String[] values = mRes.getStringArray(R.array.mvno_type_entries);
-            if (values[mvnoIndex].equals("None")) {
-                mMvnoMatchData.setEnabled(false);
-            } else {
-                mMvnoMatchData.setEnabled(true);
-            }
+            mMvnoMatchData.setEnabled(mvnoIndex != 0);
             if (newValue != null && newValue.equals(oldValue) == false) {
                 if (values[mvnoIndex].equals("SPN")) {
                     mMvnoMatchData.setText(mTelephonyManager.getSimOperatorName());
                 } else if (values[mvnoIndex].equals("IMSI")) {
-                    String numeric = mTelephonyManager.getIccOperatorNumericForData(mSubId);
+                    String numeric = mTelephonyManager.getSimOperator(mSubId);
                     mMvnoMatchData.setText(numeric + "x");
                 } else if (values[mvnoIndex].equals("GID")) {
                     mMvnoMatchData.setText(mTelephonyManager.getGroupIdLevel1());
+                } else if (values[mvnoIndex].equals("ICCID")) {
+                    if (mMvnoMatchDataStr != null) {
+                        Log.d(TAG, "mMvnoMatchDataStr: " + mMvnoMatchDataStr);
+                        mMvnoMatchData.setText(mMvnoMatchDataStr);
+                    }
                 }
             }
 
@@ -511,7 +503,7 @@ public class ApnEditor extends InstrumentedPreferenceActivity
                 int index = Integer.parseInt((String) newValue);
                 mAuthType.setValueIndex(index);
 
-                String []values = mRes.getStringArray(R.array.apn_auth_entries);
+                String[] values = mRes.getStringArray(R.array.apn_auth_entries);
                 mAuthType.setSummary(values[index]);
             } catch (NumberFormatException e) {
                 return false;
@@ -544,17 +536,23 @@ public class ApnEditor extends InstrumentedPreferenceActivity
             }
             mMvnoType.setValue((String) newValue);
             mMvnoType.setSummary(mvno);
+        } else if (preference.equals(mPassword)) {
+            preference.setSummary(starify(newValue != null ? String.valueOf(newValue) : ""));
+        } else if (preference.equals(mCarrierEnabled)) {
+            // do nothing
+        } else {
+            preference.setSummary(checkNull(newValue != null ? String.valueOf(newValue) : null));
         }
 
         return true;
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        super.onCreateOptionsMenu(menu);
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
         if (mDisableEditor) {
             Log.d(TAG, "Form is disabled. Do not create the options menu.");
-            return true;
+            return;
         }
         // If it's a new APN, then cancel will delete the new entry in onPause
         if (!mNewApn) {
@@ -565,7 +563,6 @@ public class ApnEditor extends InstrumentedPreferenceActivity
             .setIcon(android.R.drawable.ic_menu_save);
         menu.add(0, MENU_CANCEL, 0, R.string.menu_cancel)
             .setIcon(android.R.drawable.ic_menu_close_clear_cancel);
-        return true;
     }
 
     @Override
@@ -590,7 +587,13 @@ public class ApnEditor extends InstrumentedPreferenceActivity
     }
 
     @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        view.setOnKeyListener(this);
+    }
+
+    public boolean onKey(View v, int keyCode, KeyEvent event) {
+        if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
         switch (keyCode) {
             case KeyEvent.KEYCODE_BACK: {
                 if (validateAndSave(false)) {
@@ -599,11 +602,11 @@ public class ApnEditor extends InstrumentedPreferenceActivity
                 return true;
             }
         }
-        return super.onKeyDown(keyCode, event);
+        return false;
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle icicle) {
+    public void onSaveInstanceState(Bundle icicle) {
         super.onSaveInstanceState(icicle);
         if (validateAndSave(true)) {
             icicle.putInt(SAVED_POS, mCursor.getInt(ID_INDEX));
@@ -630,7 +633,7 @@ public class ApnEditor extends InstrumentedPreferenceActivity
         String mnc = checkNotSet(mMnc.getText());
 
         if (getErrorMsg() != null && !force) {
-            showDialog(ERROR_DIALOG_ID);
+            ErrorDialog.showError(this);
             return false;
         }
 
@@ -677,11 +680,6 @@ public class ApnEditor extends InstrumentedPreferenceActivity
 
         values.put(Telephony.Carriers.NUMERIC, mcc + mnc);
 
-        String pppNumber = mPppNumber.getText();
-        if (pppNumber != null) {
-            values.put(getResources().getString(R.string.ppp_number), pppNumber);
-        }
-
         if (mCurMnc != null && mCurMcc != null) {
             if (mCurMnc.equals(mnc) && mCurMcc.equals(mcc)) {
                 values.put(Telephony.Carriers.CURRENT, 1);
@@ -717,79 +715,9 @@ public class ApnEditor extends InstrumentedPreferenceActivity
         values.put(Telephony.Carriers.MVNO_MATCH_DATA, checkNotSet(mMvnoMatchData.getText()));
 
         values.put(Telephony.Carriers.CARRIER_ENABLED, mCarrierEnabled.isChecked() ? 1 : 0);
-
-        if (isDuplicate(values)) {
-            showDialog(DUPLICATE_DIALOG_ID);
-            return false;
-        }
-
         getContentResolver().update(mUri, values, null, null);
 
         return true;
-    }
-
-    private boolean isDuplicate(ContentValues row) {
-        if (!getResources().getBoolean(R.bool.config_enable_duplicate_apn_checking)) {
-            return false;
-        }
-
-        final Set<String> keys = row.keySet();
-
-        StringBuilder queryBuilder = new StringBuilder();
-        List<String> selectionArgsList = new ArrayList<>();
-
-        final Iterator<String> iterator = keys.iterator();
-        while (iterator.hasNext()) {
-            final String key = iterator.next();
-
-            if (!keyForDuplicateCheck(key) || row.getAsString(key).isEmpty()) {
-                // Skip keys which don't interest us for the duplicate query.
-                // Or if the user hasn't yet filled a field in (empty value), skip it.
-                continue;
-            }
-
-            queryBuilder.append(key);
-            queryBuilder.append("=?");
-            queryBuilder.append(" AND ");
-
-            selectionArgsList.add(row.getAsString(key));
-        }
-        // remove extra AND at the end
-        queryBuilder.delete(queryBuilder.length() - " AND ".length(), queryBuilder.length());
-
-        String[] selectionArgs = new String[selectionArgsList.size()];
-        selectionArgsList.toArray(selectionArgs);
-
-        try (Cursor query = getContentResolver().query(Telephony.Carriers.CONTENT_URI,
-                sProjection, queryBuilder.toString(), selectionArgs, null)) {
-            return query.getCount() > (mNewApn ? 0 : 1);
-        } catch (Exception e) {
-            Log.e(TAG, "error querying for duplicates", e);
-            return false;
-        }
-    }
-
-    /**
-     * Helper method to decide what columns should be considered valid when checking for
-     * potential duplicate APNs before allowing the user to add a new one.
-     *
-     * @param key the column of the row we want to check
-     * @return whether to include this key-value pair in the duplicate query
-     */
-    private static boolean keyForDuplicateCheck(String key) {
-        switch (key) {
-            case Telephony.Carriers.APN:
-            case Telephony.Carriers.MMSPROXY:
-            case Telephony.Carriers.MMSPORT:
-            case Telephony.Carriers.MMSC:
-            case Telephony.Carriers.TYPE:
-            case Telephony.Carriers.MCC:
-            case Telephony.Carriers.MNC:
-            case Telephony.Carriers.NUMERIC:
-                return true;
-            default:
-                return false;
-        }
     }
 
     private String getErrorMsg() {
@@ -811,41 +739,6 @@ public class ApnEditor extends InstrumentedPreferenceActivity
         }
 
         return errorMsg;
-    }
-
-    @Override
-    protected Dialog onCreateDialog(int id) {
-
-        if (id == ERROR_DIALOG_ID) {
-            String msg = getErrorMsg();
-
-            return new AlertDialog.Builder(this)
-                    .setTitle(R.string.error_title)
-                    .setPositiveButton(android.R.string.ok, null)
-                    .setMessage(msg)
-                    .create();
-        } else if (id == DUPLICATE_DIALOG_ID) {
-            return new AlertDialog.Builder(this)
-                    .setTitle(R.string.duplicate_apn_error_title)
-                    .setPositiveButton(android.R.string.ok, null)
-                    .setMessage(getString(R.string.duplicate_apn_error_message))
-                    .create();
-        }
-
-        return super.onCreateDialog(id);
-    }
-
-    @Override
-    protected void onPrepareDialog(int id, Dialog dialog) {
-        super.onPrepareDialog(id, dialog);
-
-        if (id == ERROR_DIALOG_ID) {
-            String msg = getErrorMsg();
-
-            if (msg != null) {
-                ((AlertDialog)dialog).setMessage(msg);
-            }
-        }
     }
 
     private void deleteApn() {
@@ -881,16 +774,24 @@ public class ApnEditor extends InstrumentedPreferenceActivity
         }
     }
 
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        Preference pref = findPreference(key);
-        if (pref != null) {
-            if (pref.equals(mPassword)){
-                pref.setSummary(starify(sharedPreferences.getString(key, "")));
-            } else if (pref.equals(mCarrierEnabled) || pref.equals(mBearerMulti)) {
-                // do nothing
-            } else {
-                pref.setSummary(checkNull(sharedPreferences.getString(key, "")));
-            }
+    public static class ErrorDialog extends DialogFragment {
+
+        public static void showError(ApnEditor editor) {
+            ErrorDialog dialog = new ErrorDialog();
+            dialog.setTargetFragment(editor, 0);
+            dialog.show(editor.getFragmentManager(), "error");
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            String msg = ((ApnEditor) getTargetFragment()).getErrorMsg();
+
+            return new AlertDialog.Builder(getContext())
+                    .setTitle(R.string.error_title)
+                    .setPositiveButton(android.R.string.ok, null)
+                    .setMessage(msg)
+                    .create();
         }
     }
+
 }

@@ -21,11 +21,9 @@
         <PreferenceScreen android:key="system_update_settings"
                 android:title="@string/system_update_settings_list_item_title"
                 android:summary="@string/system_update_settings_list_item_summary">
-            <intent android:action="android.intent.action.MAIN">
-                <categories android:name="android.settings.SYSTEM_UPDATE_SETTINGS" />
-                <categories android:name="com.android.settings.SHORTCUT" />
-            </intent>
+            <intent android:action="android.settings.SYSTEM_UPDATE_SETTINGS" />
         </PreferenceScreen>
+
 
         <PreferenceScreen android:key="additional_system_update_settings"
                           android:title="@string/additional_system_update_settings_list_item_title">
@@ -34,22 +32,13 @@
                     android:targetClass="@string/additional_system_update_menu" />
         </PreferenceScreen>
 
-        <!-- CyanogenMod Updates -->
-        <PreferenceScreen android:key="cm_updates"
-                android:title="@string/cmupdate_settings_title"
-                android:summary="@string/system_update_settings_list_item_summary">
-            <intent android:action="android.intent.action.MAIN"
-                    android:targetPackage="com.cyanogenmod.updater"
-                    android:targetClass="com.cyanogenmod.updater.UpdatesSettings" />
-        </PreferenceScreen>
-
         <!-- Device status - launches activity -->
         <PreferenceScreen android:key="status_info"
                 android:title="@string/device_status"
                 android:summary="@string/device_status_summary">
             <intent android:action="android.intent.action.MAIN"
                     android:targetPackage="com.android.settings"
-                    android:targetClass="com.android.settings.deviceinfo.Status" />
+                    android:targetClass="com.android.settings.Settings$StatusActivity" />
         </PreferenceScreen>
 
         <!-- Manual -->
@@ -76,81 +65,87 @@
                 android:title="@string/device_feedback">
         </PreferenceScreen>
 
-        <!-- Contributors cloud -->
-        <PreferenceScreen android:key="contributors_cloud"
-            android:title="@string/contributors_cloud_fragment_title"
-            android:fragment="com.android.settings.contributors.ContributorsCloudFragment" >
-        </PreferenceScreen>
-
-        <!-- Device name -->
-        <Preference android:key="device_name"
-                style="?android:preferenceInformationStyle"
-                android:title="@string/device_name"
-                android:summary="@string/device_info_default"/>
-
         <!-- Device hardware model -->
         <Preference android:key="device_model"
-                style="?android:preferenceInformationStyle"
-                android:title="@string/device_model"
+                android:enabled="false"
+                android:shouldDisableView="false"
+                android:title="@string/model_number"
                 android:summary="@string/device_info_default"/>
 
         <!-- Device firmware version -->
         <Preference android:key="firmware_version"
-                style="?android:preferenceInformationStyle"
+                android:enabled="false"
+                android:shouldDisableView="false"
                 android:title="@string/firmware_version"
                 android:summary="@string/device_info_default"/>
 
         <!-- Mod version -->
         <Preference android:key="mod_version"
-                style="?android:preferenceInformationStyle"
+                android:enabled="false"
+                android:shouldDisableView="false"
                 android:title="@string/mod_version"
                 android:summary="@string/mod_version_default" />
 
         <!-- CyanogenMod API Version -->
         <Preference android:key="mod_api_level"
-                style="?android:preferenceInformationStyle"
+                android:enabled="false"
+                android:shouldDisableView="false"
                 android:title="@string/mod_api_level"
                 android:summary="@string/mod_api_level_default" />
 
         <!-- Security patch level -->
         <Preference android:key="security_patch"
-                style="?android:preferenceInformationStyle"
+                android:enabled="false"
+                android:shouldDisableView="false"
                 android:title="@string/security_patch"
                 android:summary="@string/device_info_default"/>
 
         <!-- Device FCC equipment id -->
         <Preference android:key="fcc_equipment_id"
-                style="?android:preferenceInformationStyle"
+                android:enabled="false"
+                android:shouldDisableView="false"
                 android:title="@string/fcc_equipment_id"
+                android:summary="@string/device_info_default"/>
+
+        <!-- Device MBN version -->
+        <Preference android:key="mbn_version"
+                android:enabled="false"
+                android:shouldDisableView="false"
+                android:title="@string/mbn_version"
                 android:summary="@string/device_info_default"/>
 
         <!-- Device Baseband version -->
         <Preference android:key="baseband_version"
-                style="?android:preferenceInformationStyle"
+                android:enabled="false"
+                android:shouldDisableView="false"
                 android:title="@string/baseband_version"
                 android:summary="@string/device_info_default"/>
 
         <!-- Device Kernel version -->
         <Preference android:key="kernel_version"
-                style="?android:preferenceInformationStyle"
+                android:enabled="false"
+                android:shouldDisableView="false"
                 android:title="@string/kernel_version"
                 android:summary="@string/device_info_default"/>
 
         <!-- Build date -->
         <Preference android:key="build_date"
-                style="?android:preferenceInformationStyle"
+                android:enabled="false"
+                android:shouldDisableView="false"
                 android:title="@string/build_date"
                 android:summary="@string/build_date_default" />
 
         <!-- Detailed build version -->
         <Preference android:key="build_number"
-                style="?android:preferenceInformationStyle"
+                android:enabled="false"
+                android:shouldDisableView="false"
                 android:title="@string/build_number"
                 android:summary="@string/device_info_default"/>
 
         <!-- SELinux status information -->
         <Preference android:key="selinux_status"
-                style="?android:preferenceInformationStyle"
+                android:enabled="false"
+                android:shouldDisableView="false"
                 android:title="@string/selinux_status"
                 android:summary="@string/selinux_status_enforcing"/>
 

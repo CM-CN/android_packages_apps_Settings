@@ -14,11 +14,21 @@
      limitations under the License.
 -->
 
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:settings="http://schemas.android.com/apk/res-auto">
+
+    <SwitchPreference
+        android:key="usb_tether_settings"
+        android:title="@string/usb_tethering_button_text" />
 
     <SwitchPreference
         android:key="enable_wifi_ap"
+        android:title="@string/wifi_tether_checkbox_text" />
+
+    <com.android.settings.HotspotPreference
+        android:key="enable_wifi_ap_ext"
         android:title="@string/wifi_tether_checkbox_text"
+        android:layout="@layout/hotspot_checkbox"
         android:persistent="false" />
 
     <Preference
@@ -26,26 +36,17 @@
         android:title="@string/wifi_tether_configure_ap_text"
         android:persistent="false" />
 
-    <ListPreference
-        android:key="hotstpot_inactivity_timeout"
-        android:title="@string/hotstpot_inactivity_timeout_text"
-        android:entries="@array/hotstpot_inactivity_timeout_entries"
-        android:entryValues="@array/hotstpot_inactivity_timeout_values"
-        android:persistent="false" />
+    <SwitchPreference
+        android:key="enable_bluetooth_tethering"
+        android:title="@string/bluetooth_tether_checkbox_text" />
 
-    <PreferenceCategory
-        android:title="@string/tethering_other_category_text">
-
-        <SwitchPreference
-            android:key="usb_tether_settings"
-            android:title="@string/usb_tethering_button_text"
-            android:persistent="false" />
-
-        <SwitchPreference
-            android:key="enable_bluetooth_tethering"
-            android:title="@string/bluetooth_tether_checkbox_text"
-            android:persistent="false" />
-
-    </PreferenceCategory>
-
+    <com.android.settings.DividerPreference
+            android:key="disabled_on_data_saver"
+            android:summary="@string/tether_settings_disabled_on_data_saver"
+            android:selectable="false"
+            settings:allowDividerAbove="true" />
+    <PreferenceScreen
+        android:key="tethering_help"
+        android:title="@string/tethering_help_button_text" >
+    </PreferenceScreen>
 </PreferenceScreen>

@@ -17,10 +17,11 @@
 package com.android.settings;
 
 import android.app.Fragment;
+import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.UserHandle;
+import android.os.UserManager;
 
 import com.android.internal.widget.LockPatternUtils;
 
@@ -38,6 +39,9 @@ abstract class SaveChosenLockWorkerBase extends Fragment {
     protected boolean mHasChallenge;
     protected long mChallenge;
     protected boolean mWasSecureBefore;
+    protected int mUserId;
+
+    private boolean mBlocking;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -57,21 +61,32 @@ abstract class SaveChosenLockWorkerBase extends Fragment {
     }
 
     protected void prepare(LockPatternUtils utils, boolean credentialRequired,
-            boolean hasChallenge, long challenge) {
+            boolean hasChallenge, long challenge, int userId) {
         mUtils = utils;
+        mUserId = userId;
 
         mHasChallenge = hasChallenge;
         mChallenge = challenge;
-        mWasSecureBefore = mUtils.isSecure(UserHandle.myUserId());
+        // This will be a no-op for non managed profiles.
+        mWasSecureBefore = mUtils.isSecure(mUserId);
 
-        mUtils.setCredentialRequiredToDecrypt(credentialRequired);
+        Context context = getContext();
+        // If context is null, we're being invoked to change the setCredentialRequiredToDecrypt,
+        // and we made sure that this is the primary user already.
+        if (context == null || UserManager.get(context).getUserInfo(mUserId).isPrimary()) {
+            mUtils.setCredentialRequiredToDecrypt(credentialRequired);
+        }
 
         mFinished = false;
         mResultData = null;
     }
 
     protected void start() {
-        new Task().execute();
+        if (mBlocking) {
+            finish(saveAndVerifyInBackground());
+        } else {
+            new Task().execute();
+        }
     }
 
     /**
@@ -86,6 +101,10 @@ abstract class SaveChosenLockWorkerBase extends Fragment {
         if (mListener != null) {
             mListener.onChosenLockSaveFinished(mWasSecureBefore, mResultData);
         }
+    }
+
+    public void setBlocking(boolean blocking) {
+        mBlocking = blocking;
     }
 
     private class Task extends AsyncTask<Void, Void, Intent> {

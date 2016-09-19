@@ -21,16 +21,11 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.os.Bundle;
-import android.os.RemoteException;
-import android.os.ServiceManager;
 import android.telecom.PhoneAccount;
 import android.telecom.PhoneAccountHandle;
 import android.telecom.TelecomManager;
-import android.telephony.SmsManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
@@ -38,18 +33,14 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
-import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android.internal.telephony.IExtTelephony;
-import com.android.internal.telephony.SmsApplication;
 import com.android.settings.R;
-import com.android.settings.Utils;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -65,17 +56,11 @@ public class SimDialogActivity extends Activity {
     public static final int SMS_PICK = 2;
     public static final int PREFERRED_PICK = 3;
 
-    private boolean mHideAlwaysAsk = false;
-
-    private IExtTelephony mExtTelephony = IExtTelephony.Stub.
-            asInterface(ServiceManager.getService("extphone"));
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         final Bundle extras = getIntent().getExtras();
         final int dialogType = extras.getInt(DIALOG_TYPE_KEY, INVALID_PICK);
-        mHideAlwaysAsk = !SmsApplication.canSmsAppHandleAlwaysAsk(this) && dialogType == SMS_PICK;
 
         switch (dialogType) {
             case DATA_PICK:
@@ -167,7 +152,6 @@ public class SimDialogActivity extends Activity {
     public Dialog createDialog(final Context context, final int id) {
         final ArrayList<String> list = new ArrayList<String>();
         final SubscriptionManager subscriptionManager = SubscriptionManager.from(context);
-        final ArrayList<SubscriptionInfo> smsSubInfoList = new ArrayList<SubscriptionInfo>();
         final List<SubscriptionInfo> subInfoList =
             subscriptionManager.getActiveSubscriptionInfoList();
         final int selectableSubInfoLength = subInfoList == null ? 0 : subInfoList.size();
@@ -182,12 +166,7 @@ public class SimDialogActivity extends Activity {
                         switch (id) {
                             case DATA_PICK:
                                 sir = subInfoList.get(value);
-                                SubscriptionInfo defaultSub = subscriptionManager
-                                        .getDefaultDataSubscriptionInfo();
-                                if (defaultSub == null || defaultSub.getSubscriptionId()
-                                        != sir.getSubscriptionId()) {
-                                    setDefaultDataSubId(context, sir.getSubscriptionId());
-                                }
+                                setDefaultDataSubId(context, sir.getSubscriptionId());
                                 break;
                             case CALLS_PICK:
                                 final TelecomManager telecomManager =
@@ -198,32 +177,8 @@ public class SimDialogActivity extends Activity {
                                         value < 1 ? null : phoneAccountsList.get(value - 1));
                                 break;
                             case SMS_PICK:
-                                boolean isSmsPrompt = false;
-                                if (value < 1) {
-                                    isSmsPrompt = false; // user knows best
-                                    setDefaultSmsSubId(context, SubscriptionManager.INVALID_SUBSCRIPTION_ID);
-                                } else {
-                                    sir = smsSubInfoList.get(value);
-                                    if ( sir != null) {
-                                        setDefaultSmsSubId(context, sir.getSubscriptionId());
-                                    } else {
-                                        isSmsPrompt = true;
-                                    }
-                                    Log.d(TAG, "SubscriptionInfo:" + sir);
-                                }
-                                Log.d(TAG, "isSmsPrompt: " + isSmsPrompt);
-                                try {
-                                    mExtTelephony.setSMSPromptEnabled(isSmsPrompt);
-                                } catch (RemoteException ex) {
-                                    Log.e(TAG, "RemoteException @setSMSPromptEnabled" + ex);
-                                } catch (NullPointerException ex) {
-                                    Log.e(TAG, "NullPointerException @setSMSPromptEnabled" + ex);
-                                }
-
-                                //Regardless, ignore the secondary telephony framework
-                                if (mExtTelephony == null) {
-                                    SmsManager.getDefault().setSMSPromptEnabled(isSmsPrompt);
-                                }
+                                sir = subInfoList.get(value);
+                                setDefaultSmsSubId(context, sir.getSubscriptionId());
                                 break;
                             default:
                                 throw new IllegalArgumentException("Invalid dialog type "
@@ -245,25 +200,19 @@ public class SimDialogActivity extends Activity {
                 }
             };
 
-        int currentIndex = 0;
         ArrayList<SubscriptionInfo> callsSubInfoList = new ArrayList<SubscriptionInfo>();
         if (id == CALLS_PICK) {
             final TelecomManager telecomManager = TelecomManager.from(context);
             final TelephonyManager telephonyManager = TelephonyManager.from(context);
             final Iterator<PhoneAccountHandle> phoneAccounts =
                     telecomManager.getCallCapablePhoneAccounts().listIterator();
-            PhoneAccountHandle defaultPhoneAccount =
-                    telecomManager.getUserSelectedOutgoingPhoneAccount();
+
             list.add(getResources().getString(R.string.sim_calls_ask_first_prefs_title));
             callsSubInfoList.add(null);
             while (phoneAccounts.hasNext()) {
                 final PhoneAccount phoneAccount =
                         telecomManager.getPhoneAccount(phoneAccounts.next());
                 list.add((String)phoneAccount.getLabel());
-                if (defaultPhoneAccount != null && defaultPhoneAccount.equals(
-                        phoneAccount.getAccountHandle())) {
-                    currentIndex = list.size() - 1;
-                }
                 int subId = telephonyManager.getSubIdForPhoneAccount(phoneAccount);
                 if (subId != SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
                     final SubscriptionInfo sir = SubscriptionManager.from(context)
@@ -273,41 +222,7 @@ public class SimDialogActivity extends Activity {
                     callsSubInfoList.add(null);
                 }
             }
-        } else if ((id == SMS_PICK)){
-            list.add(getResources().getString(R.string.sim_calls_ask_first_prefs_title));
-            smsSubInfoList.add(null);
-            SubscriptionInfo defaultSub = subscriptionManager.getActiveSubscriptionInfo(
-                    SubscriptionManager.getDefaultSmsSubId());
-            boolean isSMSPrompt = false;
-            try {
-                isSMSPrompt = mExtTelephony.isSMSPromptEnabled();
-            } catch (RemoteException | NullPointerException e) {
-                // Assume sms prompt is disabled
-            }
-            // External telephony interfaces may not exist, fall back to our impl
-            if (mExtTelephony == null) {
-                isSMSPrompt = SmsManager.getDefault().isSMSPromptEnabled();
-            }
-            for (int i = 0; i < selectableSubInfoLength; ++i) {
-                final SubscriptionInfo sir = subInfoList.get(i);
-                smsSubInfoList.add(sir);
-                CharSequence displayName = sir.getDisplayName();
-                if (displayName == null) {
-                    displayName = "";
-                }
-                list.add(displayName.toString());
-                if (!isSMSPrompt && defaultSub != null && sir.getSubscriptionId()
-                        == defaultSub.getSubscriptionId()) {
-                    currentIndex = list.size() - 1;
-                }
-            }
-            if (mHideAlwaysAsk && currentIndex == 0) {
-                // unselect always ask because user can't select it.
-                currentIndex = -1;
-            }
         } else {
-            currentIndex = -1;
-            final int defaultDataSubId = SubscriptionManager.getDefaultDataSubId();
             for (int i = 0; i < selectableSubInfoLength; ++i) {
                 final SubscriptionInfo sir = subInfoList.get(i);
                 CharSequence displayName = sir.getDisplayName();
@@ -315,15 +230,18 @@ public class SimDialogActivity extends Activity {
                     displayName = "";
                 }
                 list.add(displayName.toString());
-                if (defaultDataSubId == sir.getSubscriptionId()) {
-                    currentIndex = list.size() - 1;
-                }
             }
         }
 
         String[] arr = list.toArray(new String[0]);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
+
+        ListAdapter adapter = new SelectAccountListAdapter(
+                id == CALLS_PICK ? callsSubInfoList : subInfoList,
+                builder.getContext(),
+                R.layout.select_account_list_item,
+                arr, id);
 
         switch (id) {
             case DATA_PICK:
@@ -340,12 +258,6 @@ public class SimDialogActivity extends Activity {
                         + id + " in SIM dialog.");
         }
 
-        ListAdapter adapter = new SelectAccountListAdapter(
-                id == CALLS_PICK ? callsSubInfoList :
-                        (id == SMS_PICK ? smsSubInfoList: subInfoList),
-                builder.getContext(),
-                R.layout.select_account_list_item,
-                arr, id, currentIndex);
         Dialog dialog = builder.setAdapter(adapter, selectionListener).create();
         dialog.setOnKeyListener(keyListener);
 
@@ -355,11 +267,6 @@ public class SimDialogActivity extends Activity {
                 finish();
             }
         });
-        if (mHideAlwaysAsk) {
-            // make sure the user doesn't click out accidentally and we keep spamming them
-            // with dialogs
-            dialog.setCancelable(false);
-        }
 
         return dialog;
 
@@ -371,26 +278,14 @@ public class SimDialogActivity extends Activity {
         private int mDialogId;
         private final float OPACITY = 0.54f;
         private List<SubscriptionInfo> mSubInfoList;
-        private final int mSelectionIndex;
-
-        @Override
-        public boolean areAllItemsEnabled() {
-            return false;
-        }
-
-        @Override
-        public boolean isEnabled(int position) {
-            return !(mHideAlwaysAsk && mSubInfoList.get(position) == null);
-        }
 
         public SelectAccountListAdapter(List<SubscriptionInfo> subInfoList,
-                Context context, int resource, String[] arr, int dialogId, int selectionIndex) {
+                Context context, int resource, String[] arr, int dialogId) {
             super(context, resource, arr);
             mContext = context;
             mResId = resource;
             mDialogId = dialogId;
             mSubInfoList = subInfoList;
-            mSelectionIndex = selectionIndex;
         }
 
         @Override
@@ -407,54 +302,31 @@ public class SimDialogActivity extends Activity {
                 holder.title = (TextView) rowView.findViewById(R.id.title);
                 holder.summary = (TextView) rowView.findViewById(R.id.summary);
                 holder.icon = (ImageView) rowView.findViewById(R.id.icon);
-                holder.radio = (RadioButton) rowView.findViewById(R.id.radio);
                 rowView.setTag(holder);
             } else {
                 rowView = convertView;
                 holder = (ViewHolder) rowView.getTag();
             }
 
-            final boolean enabled = isEnabled(position);
             final SubscriptionInfo sir = mSubInfoList.get(position);
             if (sir == null) {
                 holder.title.setText(getItem(position));
-                holder.summary.setText(mHideAlwaysAsk
-                        ? getString(R.string.not_available_with_app, getCurrentSmsAppName())
-                        : null);
-                holder.summary.setVisibility(View.VISIBLE);
+                holder.summary.setText("");
                 holder.icon.setImageDrawable(getResources()
                         .getDrawable(R.drawable.ic_live_help));
                 holder.icon.setAlpha(OPACITY);
             } else {
                 holder.title.setText(sir.getDisplayName());
                 holder.summary.setText(sir.getNumber());
-                holder.summary.setVisibility(View.VISIBLE);
                 holder.icon.setImageBitmap(sir.createIconBitmap(mContext));
             }
-            holder.radio.setChecked(position == mSelectionIndex);
-            holder.radio.setEnabled(enabled);
-            holder.title.setEnabled(enabled);
-            holder.summary.setEnabled(enabled);
             return rowView;
-        }
-
-        private String getCurrentSmsAppName() {
-            try {
-                final ApplicationInfo applicationInfo = getPackageManager().getApplicationInfo(
-                        SmsApplication.getDefaultMmsApplication(getApplicationContext(), false)
-                                .getPackageName(), 0);
-                return getPackageManager().getApplicationLabel(applicationInfo).toString();
-            } catch (PackageManager.NameNotFoundException e) {
-                e.printStackTrace();
-            }
-            return null;
         }
 
         private class ViewHolder {
             TextView title;
             TextView summary;
             ImageView icon;
-            RadioButton radio;
         }
     }
 }

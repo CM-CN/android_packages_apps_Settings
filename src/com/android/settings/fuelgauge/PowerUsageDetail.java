@@ -29,21 +29,20 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.drawable.Drawable;
-import android.graphics.PorterDuff;
 import android.net.Uri;
 import android.os.BatteryStats;
 import android.os.Bundle;
 import android.os.Process;
 import android.os.UserHandle;
-import android.preference.Preference;
-import android.preference.Preference.OnPreferenceClickListener;
-import android.preference.PreferenceCategory;
+import android.support.v7.preference.Preference;
+import android.support.v7.preference.Preference.OnPreferenceClickListener;
+import android.support.v7.preference.PreferenceCategory;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
-import com.android.internal.logging.MetricsLogger;
+import com.android.internal.logging.MetricsProto.MetricsEvent;
 import com.android.internal.os.BatterySipper;
 import com.android.internal.os.BatterySipper.DrainType;
 import com.android.internal.os.BatteryStatsHelper;
@@ -54,7 +53,6 @@ import com.android.settings.R;
 import com.android.settings.SettingsActivity;
 import com.android.settings.Utils;
 import com.android.settings.WirelessSettings;
-import com.android.settings.applications.AppInfoWithHeader;
 import com.android.settings.applications.InstalledAppDetails;
 import com.android.settings.applications.LayoutPreference;
 import com.android.settings.bluetooth.BluetoothSettings;
@@ -85,12 +83,11 @@ public class PowerUsageDetail extends PowerUsageBase implements Button.OnClickLi
 
     public static void startBatteryDetailPage(
             SettingsActivity caller, BatteryStatsHelper helper, int statsType, BatteryEntry entry,
-            boolean showLocationButton) {
+            boolean showLocationButton, boolean includeAppInfo) {
         // Initialize mStats if necessary.
-        final BatteryStats stats = helper.getStats();
-        helper.getDockStats();
+        helper.getStats();
 
-        final int dischargeAmount = stats.getDischargeAmount(statsType);
+        final int dischargeAmount = helper.getStats().getDischargeAmount(statsType);
         Bundle args = new Bundle();
         args.putString(PowerUsageDetail.EXTRA_TITLE, entry.name);
         args.putInt(PowerUsageDetail.EXTRA_PERCENT, (int)
@@ -106,6 +103,7 @@ public class PowerUsageDetail extends PowerUsageBase implements Button.OnClickLi
         }
         args.putSerializable(PowerUsageDetail.EXTRA_DRAIN_TYPE, entry.sipper.drainType);
         args.putBoolean(PowerUsageDetail.EXTRA_SHOW_LOCATION_BUTTON, showLocationButton);
+        args.putBoolean(AppHeader.EXTRA_HIDE_INFO_BUTTON, !includeAppInfo);
 
         int userId = UserHandle.myUserId();
         int[] types;
@@ -153,13 +151,15 @@ public class PowerUsageDetail extends PowerUsageBase implements Button.OnClickLi
                 if (entry.sipper.drainType == BatterySipper.DrainType.APP) {
                     Writer result = new StringWriter();
                     PrintWriter printWriter = new FastPrintWriter(result, false, 1024);
-                    stats.dumpLocked(caller, printWriter, "", helper.getStatsType(), uid.getUid());
+                    helper.getStats().dumpLocked(caller, printWriter, "", helper.getStatsType(),
+                            uid.getUid());
                     printWriter.flush();
                     args.putString(PowerUsageDetail.EXTRA_REPORT_DETAILS, result.toString());
 
                     result = new StringWriter();
                     printWriter = new FastPrintWriter(result, false, 1024);
-                    stats.dumpCheckinLocked(caller, printWriter, helper.getStatsType(), uid.getUid());
+                    helper.getStats().dumpCheckinLocked(caller, printWriter, helper.getStatsType(),
+                            uid.getUid());
                     printWriter.flush();
                     args.putString(PowerUsageDetail.EXTRA_REPORT_CHECKIN_DETAILS,
                             result.toString());
@@ -354,14 +354,13 @@ public class PowerUsageDetail extends PowerUsageBase implements Button.OnClickLi
         mControlsParent = (PreferenceCategory) findPreference(KEY_CONTROLS_PARENT);
         mMessagesParent = (PreferenceCategory) findPreference(KEY_MESSAGES_PARENT);
         mPackagesParent = (PreferenceCategory) findPreference(KEY_PACKAGES_PARENT);
-        hideRefreshButton(true);
 
         createDetails();
     }
 
     @Override
     protected int getMetricsCategory() {
-        return MetricsLogger.FUELGAUGE_POWER_USAGE_DETAIL;
+        return MetricsEvent.FUELGAUGE_POWER_USAGE_DETAIL;
     }
 
     @Override
@@ -463,13 +462,15 @@ public class PowerUsageDetail extends PowerUsageBase implements Button.OnClickLi
         String pkg = args.getString(EXTRA_ICON_PACKAGE);
         int iconId = args.getInt(EXTRA_ICON_ID, 0);
         Drawable appIcon = null;
+        int uid = -1;
+        final PackageManager pm = getActivity().getPackageManager();
 
         if (!TextUtils.isEmpty(pkg)) {
             try {
-                final PackageManager pm = getActivity().getPackageManager();
                 ApplicationInfo ai = pm.getPackageInfo(pkg, 0).applicationInfo;
                 if (ai != null) {
                     appIcon = ai.loadIcon(pm);
+                    uid = ai.uid;
                 }
             } catch (NameNotFoundException nnfe) {
                 // Use default icon
@@ -480,15 +481,12 @@ public class PowerUsageDetail extends PowerUsageBase implements Button.OnClickLi
         if (appIcon == null) {
             appIcon = getActivity().getPackageManager().getDefaultActivityIcon();
         }
-        if (appIcon != null) {
-            appIcon.setTintMode(PorterDuff.Mode.SRC_ATOP);
-        }
+
         if (pkg == null && mPackages != null) {
             pkg = mPackages[0];
         }
-        AppHeader.createAppHeader(this, appIcon, title,
-                pkg != null ? AppInfoWithHeader.getInfoIntent(this, pkg) : null,
-                mDrainType != DrainType.APP ? R.color.power_usage_ab_icon_tint : 0);
+        AppHeader.createAppHeader(this, appIcon, title, pkg, uid,
+                mDrainType != DrainType.APP ? android.R.color.white : 0);
     }
 
     public void onClick(View v) {
@@ -578,7 +576,7 @@ public class PowerUsageDetail extends PowerUsageBase implements Button.OnClickLi
 
     private void addHorizontalPreference(PreferenceCategory parent, CharSequence title,
             CharSequence summary) {
-        Preference pref = new Preference(getActivity());
+        Preference pref = new Preference(getPrefContext());
         pref.setLayoutResource(R.layout.horizontal_preference);
         pref.setTitle(title);
         pref.setSummary(summary);
@@ -647,7 +645,7 @@ public class PowerUsageDetail extends PowerUsageBase implements Button.OnClickLi
     }
 
     private void addControl(int pageSummary, int actionTitle, final int action) {
-        Preference pref = new Preference(getActivity());
+        Preference pref = new Preference(getPrefContext());
         pref.setTitle(actionTitle);
         pref.setLayoutResource(R.layout.horizontal_preference);
         pref.setOnPreferenceClickListener(new OnPreferenceClickListener() {

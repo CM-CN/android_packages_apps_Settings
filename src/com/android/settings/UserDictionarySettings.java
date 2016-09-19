@@ -16,9 +16,6 @@
 
 package com.android.settings;
 
-import com.android.settings.inputmethod.UserDictionaryAddWordContents;
-import com.android.settings.inputmethod.UserDictionarySettingsUtils;
-
 import android.app.ListFragment;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -39,6 +36,9 @@ import android.widget.ListView;
 import android.widget.SectionIndexer;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
+
+import com.android.settings.inputmethod.UserDictionaryAddWordContents;
+import com.android.settings.inputmethod.UserDictionarySettingsUtils;
 
 import java.util.Locale;
 
@@ -72,12 +72,6 @@ public class UserDictionarySettings extends ListFragment {
     protected String mLocale;
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        getActivity().getActionBar().setTitle(R.string.user_dict_settings_title);
-    }
-
-    @Override
     public View onCreateView(
             LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(
@@ -87,6 +81,7 @@ public class UserDictionarySettings extends ListFragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        getActivity().getActionBar().setTitle(R.string.user_dict_settings_title);
 
         final Intent intent = getActivity().getIntent();
         final String localeFromIntent =
@@ -165,7 +160,7 @@ public class UserDictionarySettings extends ListFragment {
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         MenuItem actionItem =
                 menu.add(0, OPTIONS_MENU_ADD, 0, R.string.user_dict_settings_add_menu_title)
-                .setIcon(R.drawable.ic_menu_add_word);
+                .setIcon(R.drawable.ic_menu_add_dark);
         actionItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM |
                 MenuItem.SHOW_AS_ACTION_WITH_TEXT);
     }

@@ -17,10 +17,10 @@
 package com.android.settings.fingerprint;
 
 import android.annotation.Nullable;
-import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.UserHandle;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.WindowManager;
@@ -43,6 +43,7 @@ public abstract class FingerprintEnrollBase extends InstrumentedActivity
     static final int RESULT_TIMEOUT = FingerprintSettings.RESULT_TIMEOUT;
 
     protected byte[] mToken;
+    protected int mUserId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +55,7 @@ public abstract class FingerprintEnrollBase extends InstrumentedActivity
             mToken = savedInstanceState.getByteArray(
                     ChooseLockSettingsHelper.EXTRA_KEY_CHALLENGE_TOKEN);
         }
+        mUserId = getIntent().getIntExtra(Intent.EXTRA_USER_ID, UserHandle.myUserId());
     }
 
     @Override
@@ -93,8 +95,7 @@ public abstract class FingerprintEnrollBase extends InstrumentedActivity
     }
 
     protected void setHeaderText(int resId, boolean force) {
-        TextView layoutTitle = (TextView) getSetupWizardLayout().findViewById(
-                R.id.suw_layout_title);
+        TextView layoutTitle = getSetupWizardLayout().getHeaderTextView();
         CharSequence previousTitle = layoutTitle.getText();
         CharSequence title = getText(resId);
         if (previousTitle != title || force) {
@@ -128,6 +129,9 @@ public abstract class FingerprintEnrollBase extends InstrumentedActivity
         Intent intent = new Intent();
         intent.setClassName("com.android.settings", FingerprintEnrollEnrolling.class.getName());
         intent.putExtra(ChooseLockSettingsHelper.EXTRA_KEY_CHALLENGE_TOKEN, mToken);
+        if (mUserId != UserHandle.USER_NULL) {
+            intent.putExtra(Intent.EXTRA_USER_ID, mUserId);
+        }
         return intent;
     }
 }

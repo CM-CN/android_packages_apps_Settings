@@ -26,34 +26,20 @@
             settings:keywords="@string/keywords_location_mode"
             android:summary="@string/location_mode_location_off_title" />
 
-        <SwitchPreference
-            android:key="lto_download_data_wifi_only"
-            android:title="@string/lto_download_data_wifi_only"
-            android:summaryOn="@string/lto_download_data_wifi_only_on"
-            android:summaryOff="@string/lto_download_data_wifi_only_off"
-            android:defaultValue="false" />
-
         <!-- This preference category gets removed if there is no managed profile -->
-        <PreferenceCategory
-            android:key="managed_profile_location_category"
-            android:title="@string/managed_profile_location_category">
-
-            <Preference
-                android:key="managed_profile_location_switch"
-                android:title="@string/managed_profile_location_switch_title"
-                android:summary="@string/managed_profile_location_switch_lockdown"
-                android:persistent="false"
-                android:enabled="false"
-                android:selectable="false" />
-
-        </PreferenceCategory>
-
-        <PreferenceCategory
-            android:key="recent_location_requests"
-            android:title="@string/location_category_recent_location_requests" />
+        <com.android.settingslib.RestrictedSwitchPreference
+            android:key="managed_profile_location_switch"
+            android:title="@string/managed_profile_location_switch_title"
+            settings:useAdminDisabledSummary="true"
+            android:enabled="false"
+            android:selectable="true" />
 
         <PreferenceCategory
             android:key="location_services"
             android:title="@string/location_category_location_services" />
+
+        <com.android.settings.DividedCategory
+            android:key="recent_location_requests"
+            android:title="@string/location_category_recent_location_requests" />
 
 </PreferenceScreen>

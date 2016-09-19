@@ -16,8 +16,6 @@
 
 package com.android.settings.deviceinfo;
 
-import static com.android.settings.deviceinfo.StorageSettings.TAG;
-
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
@@ -38,11 +36,11 @@ import android.os.storage.StorageEventListener;
 import android.os.storage.StorageManager;
 import android.os.storage.VolumeInfo;
 import android.os.storage.VolumeRecord;
-import android.preference.Preference;
-import android.preference.PreferenceCategory;
-import android.preference.PreferenceGroup;
-import android.preference.PreferenceScreen;
 import android.provider.DocumentsContract;
+import android.support.v7.preference.Preference;
+import android.support.v7.preference.PreferenceCategory;
+import android.support.v7.preference.PreferenceGroup;
+import android.support.v7.preference.PreferenceScreen;
 import android.text.TextUtils;
 import android.text.format.Formatter;
 import android.text.format.Formatter.BytesResult;
@@ -54,7 +52,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 
-import com.android.internal.logging.MetricsLogger;
+import com.android.internal.logging.MetricsProto.MetricsEvent;
 import com.android.settings.R;
 import com.android.settings.Settings.StorageUseActivity;
 import com.android.settings.SettingsPreferenceFragment;
@@ -70,6 +68,8 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import android.util.Log;
+import static com.android.settings.deviceinfo.StorageSettings.TAG;
 
 /**
  * Panel showing summary and actions for a {@link VolumeInfo#TYPE_PRIVATE}
@@ -85,6 +85,8 @@ public class PrivateVolumeSettings extends SettingsPreferenceFragment {
     private static final String TAG_CONFIRM_CLEAR_CACHE = "confirmClearCache";
 
     private static final String AUTHORITY_MEDIA = "com.android.providers.media.documents";
+    private static final String STORAGE_CLEANUP_PACKAGE = "com.qti.storagecleaner";
+    private static final String STORAGE_CLENUP_CLASS = "com.qti.storagecleaner.CleanerActivity";
 
     private static final int[] ITEMS_NO_SHOW_SHARED = new int[] {
             R.string.storage_detail_apps,
@@ -117,14 +119,20 @@ public class PrivateVolumeSettings extends SettingsPreferenceFragment {
 
     private Preference mExplore;
 
+    private boolean mNeedsUpdate;
+
     private boolean isVolumeValid() {
         return (mVolume != null) && (mVolume.getType() == VolumeInfo.TYPE_PRIVATE)
                 && mVolume.isMountedReadable();
     }
 
+    public PrivateVolumeSettings() {
+        setRetainInstance(true);
+    }
+
     @Override
     protected int getMetricsCategory() {
-        return MetricsLogger.DEVICEINFO_STORAGE;
+        return MetricsEvent.DEVICEINFO_STORAGE;
     }
 
     @Override
@@ -153,21 +161,27 @@ public class PrivateVolumeSettings extends SettingsPreferenceFragment {
         addPreferencesFromResource(R.xml.device_info_storage_volume);
         getPreferenceScreen().setOrderingAsAdded(true);
 
-        mSummary = new StorageSummaryPreference(context);
+        mSummary = new StorageSummaryPreference(getPrefContext());
         mCurrentUser = mUserManager.getUserInfo(UserHandle.myUserId());
 
         mExplore = buildAction(R.string.storage_menu_explore);
 
+        mNeedsUpdate = true;
+
         setHasOptionsMenu(true);
     }
 
-    public void update() {
+    private void setTitle() {
+        getActivity().setTitle(mStorageManager.getBestVolumeDescription(mVolume));
+    }
+
+    private void update() {
         if (!isVolumeValid()) {
             getActivity().finish();
             return;
         }
 
-        getActivity().setTitle(mStorageManager.getBestVolumeDescription(mVolume));
+        setTitle();
 
         // Valid options may have changed
         getFragmentManager().invalidateOptionsMenu();
@@ -230,6 +244,7 @@ public class PrivateVolumeSettings extends SettingsPreferenceFragment {
         mSummary.setPercent((int) ((usedBytes * 100) / totalBytes));
 
         mMeasure.forceMeasure();
+        mNeedsUpdate = false;
     }
 
     private void addPreference(PreferenceGroup group, Preference pref) {
@@ -242,7 +257,7 @@ public class PrivateVolumeSettings extends SettingsPreferenceFragment {
         if (mHeaderPoolIndex < mHeaderPreferencePool.size()) {
             category = mHeaderPreferencePool.get(mHeaderPoolIndex);
         } else {
-            category = new PreferenceCategory(getActivity(), null,
+            category = new PreferenceCategory(getPrefContext(), null,
                     com.android.internal.R.attr.preferenceCategoryStyle);
             mHeaderPreferencePool.add(category);
         }
@@ -270,8 +285,10 @@ public class PrivateVolumeSettings extends SettingsPreferenceFragment {
         }
         if (title != null) {
             item.setTitle(title);
+            item.setKey(title.toString());
         } else {
             item.setTitle(titleRes);
+            item.setKey(Integer.toString(titleRes));
         }
         item.setSummary(R.string.memory_calculating_size);
         item.userHandle = userId;
@@ -280,13 +297,14 @@ public class PrivateVolumeSettings extends SettingsPreferenceFragment {
     }
 
     private StorageItemPreference buildItem() {
-        final StorageItemPreference item = new StorageItemPreference(getActivity());
+        final StorageItemPreference item = new StorageItemPreference(getPrefContext());
         return item;
     }
 
     private Preference buildAction(int titleRes) {
-        final Preference pref = new Preference(getActivity());
+        final Preference pref = new Preference(getPrefContext());
         pref.setTitle(titleRes);
+        pref.setKey(Integer.toString(titleRes));
         return pref;
     }
 
@@ -302,7 +320,12 @@ public class PrivateVolumeSettings extends SettingsPreferenceFragment {
         }
 
         mStorageManager.registerListener(mStorageListener);
-        update();
+
+        if (mNeedsUpdate) {
+            update();
+        } else {
+            setTitle();
+        }
     }
 
     @Override
@@ -334,6 +357,7 @@ public class PrivateVolumeSettings extends SettingsPreferenceFragment {
         final MenuItem unmount = menu.findItem(R.id.storage_unmount);
         final MenuItem format = menu.findItem(R.id.storage_format);
         final MenuItem migrate = menu.findItem(R.id.storage_migrate);
+        final MenuItem cleanUp = menu.findItem(R.id.storage_cleanup);
 
         // Actions live in menu for non-internal private volumes; they're shown
         // as preference items for public volumes.
@@ -354,9 +378,12 @@ public class PrivateVolumeSettings extends SettingsPreferenceFragment {
         // Only offer to migrate when not current storage
         final VolumeInfo privateVol = getActivity().getPackageManager()
                 .getPrimaryStorageCurrentVolume();
+
         migrate.setVisible((privateVol != null)
                 && (privateVol.getType() == VolumeInfo.TYPE_PRIVATE)
                 && !Objects.equals(mVolume, privateVol));
+
+        cleanUp.setVisible(getResources().getBoolean(R.bool.enable_storage_cleanup));
     }
 
     @Override
@@ -385,17 +412,35 @@ public class PrivateVolumeSettings extends SettingsPreferenceFragment {
                 intent.putExtra(VolumeInfo.EXTRA_VOLUME_ID, mVolume.getId());
                 startActivity(intent);
                 return true;
+            case R.id.storage_cleanup:
+                startStorageCleanupActivity();
+                return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
+    private void startStorageCleanupActivity() {
+        try {
+            Intent i = new Intent();
+            i.setClassName(STORAGE_CLEANUP_PACKAGE, STORAGE_CLENUP_CLASS);
+            startActivity(i);
+        } catch (ActivityNotFoundException e) {
+            Log.e(TAG, "Can't start storage cleanup activity");
+        }
+    }
+
     @Override
-    public boolean onPreferenceTreeClick(PreferenceScreen preferenceScreen, Preference pref) {
+    public boolean onPreferenceTreeClick(Preference pref) {
         // TODO: launch better intents for specific volume
 
         final int userId = (pref instanceof StorageItemPreference ?
                 ((StorageItemPreference)pref).userHandle : -1);
-        final int itemTitleId = pref.getTitleRes();
+        int itemTitleId;
+        try {
+            itemTitleId = Integer.parseInt(pref.getKey());
+        } catch (NumberFormatException e) {
+            itemTitleId = 0;
+        }
         Intent intent = null;
         switch (itemTitleId) {
             case R.string.storage_detail_apps: {
@@ -410,19 +455,19 @@ public class PrivateVolumeSettings extends SettingsPreferenceFragment {
 
             } break;
             case R.string.storage_detail_images: {
-                intent = new Intent(DocumentsContract.ACTION_BROWSE_DOCUMENT_ROOT);
+                intent = new Intent(DocumentsContract.ACTION_BROWSE);
                 intent.setData(DocumentsContract.buildRootUri(AUTHORITY_MEDIA, "images_root"));
                 intent.addCategory(Intent.CATEGORY_DEFAULT);
 
             } break;
             case R.string.storage_detail_videos: {
-                intent = new Intent(DocumentsContract.ACTION_BROWSE_DOCUMENT_ROOT);
+                intent = new Intent(DocumentsContract.ACTION_BROWSE);
                 intent.setData(DocumentsContract.buildRootUri(AUTHORITY_MEDIA, "videos_root"));
                 intent.addCategory(Intent.CATEGORY_DEFAULT);
 
             } break;
             case R.string.storage_detail_audio: {
-                intent = new Intent(DocumentsContract.ACTION_BROWSE_DOCUMENT_ROOT);
+                intent = new Intent(DocumentsContract.ACTION_BROWSE);
                 intent.setData(DocumentsContract.buildRootUri(AUTHORITY_MEDIA, "audio_root"));
                 intent.addCategory(Intent.CATEGORY_DEFAULT);
 
@@ -459,7 +504,7 @@ public class PrivateVolumeSettings extends SettingsPreferenceFragment {
             }
             return true;
         }
-        return super.onPreferenceTreeClick(preferenceScreen, pref);
+        return super.onPreferenceTreeClick(pref);
     }
 
     private final MeasurementReceiver mReceiver = new MeasurementReceiver() {
@@ -473,7 +518,12 @@ public class PrivateVolumeSettings extends SettingsPreferenceFragment {
         for (int i = 0; i < mItemPoolIndex; ++i) {
             StorageItemPreference item = mItemPreferencePool.get(i);
             final int userId = item.userHandle;
-            final int itemTitleId = item.getTitleRes();
+            int itemTitleId;
+            try {
+                itemTitleId = Integer.parseInt(item.getKey());
+            } catch (NumberFormatException e) {
+                itemTitleId = 0;
+            }
             switch (itemTitleId) {
                 case R.string.storage_detail_apps: {
                     updatePreference(item, details.appsSize.get(userId));
@@ -511,7 +561,7 @@ public class PrivateVolumeSettings extends SettingsPreferenceFragment {
     }
 
     private void updatePreference(StorageItemPreference pref, long size) {
-        pref.setSummary(Formatter.formatFileSize(getActivity(), size));
+        pref.setStorageSize(size, mVolume.getPath().getTotalSpace());
     }
 
     private boolean isProfileOf(UserInfo user, UserInfo profile) {
@@ -694,11 +744,16 @@ public class PrivateVolumeSettings extends SettingsPreferenceFragment {
                 public void onClick(DialogInterface dialog, int which) {
                     final PrivateVolumeSettings target = (PrivateVolumeSettings) getTargetFragment();
                     final PackageManager pm = context.getPackageManager();
-                    final List<PackageInfo> infos = pm.getInstalledPackages(0);
-                    final ClearCacheObserver observer = new ClearCacheObserver(
-                            target, infos.size());
-                    for (PackageInfo info : infos) {
-                        pm.deleteApplicationCacheFiles(info.packageName, observer);
+                    final UserManager um = context.getSystemService(UserManager.class);
+
+                    for (int userId : um.getProfileIdsWithDisabled(context.getUserId())) {
+                        final List<PackageInfo> infos = pm.getInstalledPackagesAsUser(0, userId);
+                        final ClearCacheObserver observer = new ClearCacheObserver(
+                                target, infos.size());
+                        for (PackageInfo info : infos) {
+                            pm.deleteApplicationCacheFilesAsUser(info.packageName, userId,
+                                    observer);
+                        }
                     }
                 }
             });

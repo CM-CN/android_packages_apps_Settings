@@ -21,7 +21,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.media.RingtoneManager;
 import android.net.Uri;
-import android.preference.RingtonePreference;
 import android.util.AttributeSet;
 
 public class DefaultRingtonePreference extends RingtonePreference {
@@ -32,7 +31,7 @@ public class DefaultRingtonePreference extends RingtonePreference {
     }
 
     @Override
-    protected void onPrepareRingtonePickerIntent(Intent ringtonePickerIntent) {
+    public void onPrepareRingtonePickerIntent(Intent ringtonePickerIntent) {
         super.onPrepareRingtonePickerIntent(ringtonePickerIntent);
         
         /*
@@ -44,22 +43,12 @@ public class DefaultRingtonePreference extends RingtonePreference {
 
     @Override
     protected void onSaveRingtone(Uri ringtoneUri) {
-        if (getRingtoneType() == RingtoneManager.TYPE_RINGTONE) {
-            RingtoneManager.setActualRingtoneUriBySubId(getContext(),
-                    getSubId(), ringtoneUri);
-        } else {
-            RingtoneManager.setActualDefaultRingtoneUri(getContext(),
-                    getRingtoneType(), ringtoneUri);
-        }
+        RingtoneManager.setActualDefaultRingtoneUri(getContext(), getRingtoneType(), ringtoneUri);
     }
 
     @Override
     protected Uri onRestoreRingtone() {
-        if (getRingtoneType() == RingtoneManager.TYPE_RINGTONE) {
-            return RingtoneManager.getActualRingtoneUriBySubId(getContext(), getSubId());
-        } else {
-            return RingtoneManager.getActualDefaultRingtoneUri(getContext(), getRingtoneType());
-        }
+        return RingtoneManager.getActualDefaultRingtoneUri(getContext(), getRingtoneType());
     }
-
+    
 }

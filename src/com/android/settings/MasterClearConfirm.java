@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2010 The Android Open Source Project
- * Copyright (C) 2015 The CyanogenMod Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,25 +16,26 @@
 
 package com.android.settings;
 
-import android.app.AlertDialog;
-import android.app.Dialog;
-import android.app.DialogFragment;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.AsyncTask;
+import android.os.Bundle;
+import android.os.UserHandle;
+import android.os.UserManager;
 import android.provider.Settings;
 import android.service.persistentdata.PersistentDataBlockManager;
-
-import com.android.internal.logging.MetricsLogger;
-
-import android.content.Intent;
-import android.os.Bundle;
-import android.os.UserManager;
-import android.service.persistentdata.PersistentDataBlockManager;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
+
+import com.android.internal.logging.MetricsProto.MetricsEvent;
+import com.android.settingslib.RestrictedLockUtils;
+
+import static com.android.settingslib.RestrictedLockUtils.EnforcedAdmin;
 
 /**
  * Confirm and execute a reset of the device to a clean "just out of the box"
@@ -47,174 +47,122 @@ import android.widget.TextView;
  *
  * This is the confirmation screen.
  */
-public class MasterClearConfirm extends DialogFragment {
+public class MasterClearConfirm extends OptionsMenuFragment {
 
-    private static final String REASON_MASTER_CLEAR_CONFIRM = "MasterClearConfirm";
-
-    private boolean mEraseInternal;
-    private boolean mEraseExternal;
-
-    public static class FrpDialog extends DialogFragment {
-
-        private int mOriginalOrientation;
-
-        public static FrpDialog createInstance(boolean wipeInternal, boolean wipeExternal) {
-            Bundle b = new Bundle();
-            b.putBoolean(MasterClear.EXTRA_WIPE_MEDIA, wipeInternal);
-            b.putBoolean(Intent.EXTRA_WIPE_EXTERNAL_STORAGE, wipeExternal);
-            FrpDialog fragment = new FrpDialog();
-            fragment.setArguments(b);
-
-            return fragment;
-        }
-
-        @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            final ProgressDialog progressDialog = new ProgressDialog(getActivity(), getTheme());
-            progressDialog.setIndeterminate(true);
-            progressDialog.setCancelable(false);
-            progressDialog.setTitle(getActivity().getString(R.string.master_clear_progress_title));
-            progressDialog.setMessage(getActivity().getString(R.string.master_clear_progress_text));
-            return progressDialog;
-        }
-
-        @Override
-        public void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            setShowsDialog(true);
-            setCancelable(false);
-        }
-
-        @Override
-        public void onStart() {
-            super.onStart();
-
-            // need to prevent orientation changes as we're about to go into
-            // a long IO request, so we won't be able to access inflate resources on flash
-            mOriginalOrientation = getActivity().getRequestedOrientation();
-            getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
-        }
-
-        @Override
-        public void onStop() {
-            super.onStop();
-            getActivity().setRequestedOrientation(mOriginalOrientation);
-        }
-
-        @Override
-        public void onResume() {
-            super.onResume();
-            new AsyncTask<Void, Void, Void>() {
-
-                Context mContext;
-                boolean mWipeMedia;
-                boolean mWipeExternal;
-
-                @Override
-                protected void onPreExecute() {
-                    mContext = getActivity().getApplicationContext();
-                    mWipeMedia = getArguments().getBoolean(MasterClear.EXTRA_WIPE_MEDIA);
-                    mWipeExternal = getArguments().getBoolean(Intent.EXTRA_WIPE_EXTERNAL_STORAGE);
-                }
-
-                @Override
-                protected Void doInBackground(Void... params) {
-                    final PersistentDataBlockManager pdbManager = (PersistentDataBlockManager)
-                            mContext.getSystemService(Context.PERSISTENT_DATA_BLOCK_SERVICE);
-                    if (pdbManager != null) pdbManager.wipe();
-                    return null;
-                }
-
-                @Override
-                protected void onPostExecute(Void aVoid) {
-                    FrpDialog.this.dismissAllowingStateLoss();
-                    doMasterClear(mContext, mWipeMedia, mWipeExternal);
-                }
-            }.execute();
-        }
-    }
-
-    public static MasterClearConfirm createInstance(boolean wipeInternal, boolean wipeExternal) {
-        Bundle b = new Bundle();
-        b.putBoolean(MasterClear.EXTRA_WIPE_MEDIA, wipeInternal);
-        b.putBoolean(Intent.EXTRA_WIPE_EXTERNAL_STORAGE, wipeExternal);
-        MasterClearConfirm fragment = new MasterClearConfirm();
-        fragment.setArguments(b);
-
-        return fragment;
-    }
+    private View mContentView;
+    private boolean mEraseSdCard;
 
     /**
      * The user has gone through the multiple confirmation, so now we go ahead
      * and invoke the Checkin Service to reset the device to its factory-default
      * state (rebooting in the process).
      */
-    private void onResetConfirmed() {
-        if (Utils.isMonkeyRunning()) {
-            return;
+    private Button.OnClickListener mFinalClickListener = new Button.OnClickListener() {
+
+        public void onClick(View v) {
+            if (Utils.isMonkeyRunning()) {
+                return;
+            }
+
+            final PersistentDataBlockManager pdbManager = (PersistentDataBlockManager)
+                    getActivity().getSystemService(Context.PERSISTENT_DATA_BLOCK_SERVICE);
+
+            if (pdbManager != null && !pdbManager.getOemUnlockEnabled() &&
+                    Utils.isDeviceProvisioned(getActivity())) {
+                // if OEM unlock is enabled, this will be wiped during FR process. If disabled, it
+                // will be wiped here, unless the device is still being provisioned, in which case
+                // the persistent data block will be preserved.
+                new AsyncTask<Void, Void, Void>() {
+                    int mOldOrientation;
+                    ProgressDialog mProgressDialog;
+
+                    @Override
+                    protected Void doInBackground(Void... params) {
+                        pdbManager.wipe();
+                        return null;
+                    }
+
+                    @Override
+                    protected void onPostExecute(Void aVoid) {
+                        mProgressDialog.hide();
+                        if (getActivity() != null) {
+                            getActivity().setRequestedOrientation(mOldOrientation);
+                            doMasterClear();
+                        }
+                    }
+
+                    @Override
+                    protected void onPreExecute() {
+                        mProgressDialog = getProgressDialog();
+                        mProgressDialog.show();
+
+                        // need to prevent orientation changes as we're about to go into
+                        // a long IO request, so we won't be able to access inflate resources on flash
+                        mOldOrientation = getActivity().getRequestedOrientation();
+                        getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
+                    }
+                }.execute();
+            } else {
+                doMasterClear();
+            }
         }
 
-        final PersistentDataBlockManager pdbManager = (PersistentDataBlockManager)
-                getActivity().getSystemService(Context.PERSISTENT_DATA_BLOCK_SERVICE);
-
-        if (pdbManager != null && !pdbManager.getOemUnlockEnabled()) {
-            // if OEM unlock is enabled, this will be wiped during FR process.
-            FrpDialog.createInstance(mEraseInternal, mEraseExternal)
-                    .show(getFragmentManager(), "frp_dialog");
-        } else {
-            doMasterClear(getActivity(), mEraseInternal, mEraseExternal);
+        private ProgressDialog getProgressDialog() {
+            final ProgressDialog progressDialog = new ProgressDialog(getActivity());
+            progressDialog.setIndeterminate(true);
+            progressDialog.setCancelable(false);
+            progressDialog.setTitle(
+                    getActivity().getString(R.string.master_clear_progress_title));
+            progressDialog.setMessage(
+                    getActivity().getString(R.string.master_clear_progress_text));
+            return progressDialog;
         }
-    }
+    };
 
-    private static void doMasterClear(Context context, boolean eraseInternal,
-                                      boolean eraseExternal) {
+    private void doMasterClear() {
         Intent intent = new Intent(Intent.ACTION_MASTER_CLEAR);
         intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
-        intent.putExtra(MasterClear.EXTRA_WIPE_MEDIA, eraseInternal);
-        intent.putExtra(Intent.EXTRA_WIPE_EXTERNAL_STORAGE, eraseExternal);
-        intent.putExtra(Intent.EXTRA_REASON, REASON_MASTER_CLEAR_CONFIRM);
-        context.sendBroadcast(intent);
+        intent.putExtra(Intent.EXTRA_REASON, "MasterClearConfirm");
+        intent.putExtra(Intent.EXTRA_WIPE_EXTERNAL_STORAGE, mEraseSdCard);
+        getActivity().sendBroadcast(intent);
         // Intent handling is asynchronous -- assume it will happen soon.
     }
 
-    @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {
-        if (UserManager.get(getActivity()).hasUserRestriction(
-                UserManager.DISALLOW_FACTORY_RESET)) {
-            return new AlertDialog.Builder(getActivity())
-                    .setMessage(R.string.master_clear_not_available)
-                    .create();
-        }
-        final AlertDialog alertDialog = new AlertDialog.Builder(getActivity())
-                .setTitle(R.string.device_reset_title)
-                .setMessage(getString(R.string.factory_reset_warning_text_message))
-                .setNegativeButton(R.string.cancel, null)
-                .setPositiveButton(R.string.factory_reset_warning_text_reset_now,
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                onResetConfirmed();
-                            }
-                        })
-                .create();
-        alertDialog.setOnShowListener(new DialogInterface.OnShowListener() {
-            @Override
-            public void onShow(DialogInterface dialog) {
-                AlertDialog d = (AlertDialog) dialog;
-                d.getButton(DialogInterface.BUTTON_POSITIVE)
-                        .setTextColor(getResources().getColor(R.color.factory_reset_color));
-            }
-        });
+    /**
+     * Configure the UI for the final confirmation interaction
+     */
+    private void establishFinalConfirmationState() {
+        mContentView.findViewById(R.id.execute_master_clear)
+                .setOnClickListener(mFinalClickListener);
+    }
 
-        return alertDialog;
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+            Bundle savedInstanceState) {
+        final EnforcedAdmin admin = RestrictedLockUtils.checkIfRestrictionEnforced(
+                getActivity(), UserManager.DISALLOW_FACTORY_RESET, UserHandle.myUserId());
+        if (RestrictedLockUtils.hasBaseUserRestriction(getActivity(),
+                UserManager.DISALLOW_FACTORY_RESET, UserHandle.myUserId())) {
+            return inflater.inflate(R.layout.master_clear_disallowed_screen, null);
+        } else if (admin != null) {
+            View view = inflater.inflate(R.layout.admin_support_details_empty_view, null);
+            ShowAdminSupportDetailsDialog.setAdminSupportDetails(getActivity(), view, admin, false);
+            view.setVisibility(View.VISIBLE);
+            return view;
+        }
+        mContentView = inflater.inflate(R.layout.master_clear_confirm, null);
+        establishFinalConfirmationState();
+        setAccessibilityTitle();
+        return mContentView;
     }
 
     private void setAccessibilityTitle() {
         CharSequence currentTitle = getActivity().getTitle();
-        CharSequence confirmationMessage = getText(R.string.factory_reset_warning_text_reset_now);
+        TextView confirmationMessage =
+                (TextView) mContentView.findViewById(R.id.master_clear_confirm);
         if (confirmationMessage != null) {
             String accessibileText = new StringBuilder(currentTitle).append(",").append(
-                    confirmationMessage).toString();
+                    confirmationMessage.getText()).toString();
             getActivity().setTitle(Utils.createAccessibleSequence(currentTitle, accessibileText));
         }
     }
@@ -222,15 +170,14 @@ public class MasterClearConfirm extends DialogFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getActivity() != null) {
-            getActivity().setTitle(R.string.device_reset_title);
-            setAccessibilityTitle();
-        }
 
         Bundle args = getArguments();
-        mEraseInternal = args != null && args.getBoolean(MasterClear.EXTRA_WIPE_MEDIA, false);
-        mEraseExternal = args != null && args.getBoolean(Intent.EXTRA_WIPE_EXTERNAL_STORAGE, false);
+        mEraseSdCard = args != null
+                && args.getBoolean(MasterClear.ERASE_EXTERNAL_EXTRA);
+    }
 
-        setShowsDialog(true);
+    @Override
+    protected int getMetricsCategory() {
+        return MetricsEvent.MASTER_CLEAR_CONFIRM;
     }
 }

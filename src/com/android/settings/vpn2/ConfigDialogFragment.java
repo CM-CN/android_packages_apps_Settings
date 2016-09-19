@@ -22,6 +22,7 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.net.ConnectivityManager;
 import android.net.IConnectivityManager;
 import android.os.Bundle;
 import android.os.RemoteException;
@@ -107,13 +108,15 @@ public class ConfigDialogFragment extends DialogFragment implements
         if (button == DialogInterface.BUTTON_POSITIVE) {
             // Update KeyStore entry
             KeyStore.getInstance().put(Credentials.VPN + profile.key, profile.encode(),
-                    KeyStore.UID_SELF, KeyStore.FLAG_ENCRYPTED);
+                    KeyStore.UID_SELF, /* flags */ 0);
 
             // Flush out old version of profile
             disconnect(profile);
 
+            updateLockdownVpn(dialog.isVpnAlwaysOn(), profile);
+
             // If we are not editing, connect!
-            if (!dialog.isEditing()) {
+            if (!dialog.isEditing() && !VpnUtils.isVpnLockdown(profile.key)) {
                 try {
                     connect(profile);
                 } catch (RemoteException e) {
@@ -128,15 +131,7 @@ public class ConfigDialogFragment extends DialogFragment implements
             KeyStore keyStore = KeyStore.getInstance();
             keyStore.delete(Credentials.VPN + profile.key, KeyStore.UID_SELF);
 
-            // If this was the current lockdown VPN, clear it.
-            if (Arrays.equals(profile.key.getBytes(), keyStore.get(Credentials.LOCKDOWN_VPN))) {
-                keyStore.delete(Credentials.LOCKDOWN_VPN);
-                try {
-                    mService.updateLockdownVpn();
-                } catch (RemoteException e) {
-                    Log.e(TAG, "Failed to clear lockdown VPN configuration");
-                }
-            }
+            updateLockdownVpn(false, profile);
         }
         dismiss();
     }
@@ -145,6 +140,28 @@ public class ConfigDialogFragment extends DialogFragment implements
     public void onCancel(DialogInterface dialog) {
         dismiss();
         super.onCancel(dialog);
+    }
+
+    private void updateLockdownVpn(boolean isVpnAlwaysOn, VpnProfile profile) {
+        // Save lockdown vpn
+        if (isVpnAlwaysOn) {
+            // Show toast if vpn profile is not valid
+            if (!profile.isValidLockdownProfile()) {
+                Toast.makeText(getContext(), R.string.vpn_lockdown_config_error,
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            final ConnectivityManager conn = ConnectivityManager.from(getActivity());
+            conn.setAlwaysOnVpnPackageForUser(UserHandle.myUserId(), null,
+                    /* lockdownEnabled */ false);
+            VpnUtils.setLockdownVpn(getContext(), profile.key);
+        } else {
+            // update only if lockdown vpn has been changed
+            if (VpnUtils.isVpnLockdown(profile.key)) {
+                VpnUtils.clearLockdownVpn(getContext());
+            }
+        }
     }
 
     private void connect(VpnProfile profile) throws RemoteException {
@@ -159,6 +176,7 @@ public class ConfigDialogFragment extends DialogFragment implements
         try {
             LegacyVpnInfo connected = mService.getLegacyVpnInfo(UserHandle.myUserId());
             if (connected != null && profile.key.equals(connected.key)) {
+                VpnUtils.clearLockdownVpn(getContext());
                 mService.prepareVpn(VpnConfig.LEGACY_VPN, VpnConfig.LEGACY_VPN,
                         UserHandle.myUserId());
             }

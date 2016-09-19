@@ -22,16 +22,11 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.SystemProperties;
-import android.preference.Preference;
-import android.preference.PreferenceGroup;
-import android.preference.PreferenceScreen;
 import android.provider.SearchIndexableResource;
-import android.util.Log;
+import android.support.v7.preference.PreferenceGroup;
 
-import com.android.internal.logging.MetricsLogger;
+import com.android.internal.logging.MetricsProto.MetricsEvent;
 import com.android.settings.search.BaseSearchIndexProvider;
 import com.android.settings.search.Indexable;
 
@@ -41,13 +36,10 @@ import java.util.List;
 
 public class LegalSettings extends SettingsPreferenceFragment implements Indexable {
 
-    private static final String LOG_TAG = "LegalSettings";
     private static final String KEY_TERMS = "terms";
     private static final String KEY_LICENSE = "license";
     private static final String KEY_COPYRIGHT = "copyright";
     private static final String KEY_WEBVIEW_LICENSE = "webview_license";
-    private static final String PROPERTY_CMLICENSE_URL = "ro.cmlegal.url";
-    private static final String KEY_CM_LICENSE = "cmlicense";
 
     public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
@@ -67,24 +59,8 @@ public class LegalSettings extends SettingsPreferenceFragment implements Indexab
     }
 
     @Override
-    public boolean onPreferenceTreeClick(PreferenceScreen preferenceScreen, Preference preference) {
-        if (preference.getKey().equals(KEY_CM_LICENSE)) {
-            String userCMLicenseUrl = SystemProperties.get(PROPERTY_CMLICENSE_URL);
-            final Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.addCategory(Intent.CATEGORY_DEFAULT);
-            intent.setData(Uri.parse(userCMLicenseUrl));
-            try {
-                startActivity(intent);
-            } catch (Exception e) {
-                Log.e(LOG_TAG, "Unable to start activity " + intent.toString());
-            }
-        }
-        return super.onPreferenceTreeClick(preferenceScreen, preference);
-    }
-
-    @Override
     protected int getMetricsCategory() {
-        return MetricsLogger.ABOUT_LEGAL_SETTINGS;
+        return MetricsEvent.ABOUT_LEGAL_SETTINGS;
     }
 
     public static final SearchIndexProvider SEARCH_INDEX_DATA_PROVIDER =

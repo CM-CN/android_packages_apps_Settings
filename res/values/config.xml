@@ -32,73 +32,58 @@
     <!-- Dashboard number of columns -->
     <integer name="dashboard_num_columns">1</integer>
 
+    <!-- Whether to hide IMS and DUN Apns -->
+    <bool name="config_regional_hide_ims_and_dun_apns">false</bool>
     <!-- Carrier_enabled editable -->
     <bool name="config_allow_edit_carrier_enabled" translatable="false">false</bool>
 
-    <!-- The duration (in milliseconds) of activity transitions -->
-    <integer name="setup_wizard_transition_duration">300</integer>
+    <bool name="config_regional_display_icc_id_enable">false</bool>
 
-    <!-- Config to show/hide Wifi calling mode Preference UI option -->
-    <bool name="config_wfc_mode_supported" translatable="false">true</bool>
-
-    <!-- Config to enable/disable ppp number in APN editor -->
-    <bool name="config_ppp_enabled">false</bool>
-
-    <!-- Config to set default APN type when adding a new APN -->
-    <string name="config_default_new_apn_type" translateable="false"></string>
-
-    <!-- Config to enable duplicate APN checking. When true, disallows adding new duplicate APNs -->
-    <bool name="config_enable_duplicate_apn_checking">false</bool>
-
-    <!-- Metrics server endpoints -->
-    <string name="stats_cm_url">https://stats.cyanogenmod.org/submit</string>
-    <string name="stats_cyanogen_url">https://shopvac.cyngn.com/community/heartbeat</string>
-    <string name="stats_cyanogen_token_url">https://account.cyngn.com/api/v1/community/heartbeat_token</string>
-
-    <!-- Display ro.product.name above Device model -->
-    <bool name="config_displayDeviceName">false</bool>
-
-    <!-- SAR Level for a device -->
-    <!-- Must be overlaid by device -->
-    <bool name="config_show_sar_enable" translatable="false">false</bool>
-    <!-- Maximum Specific Absorption Rate for head -->
-    <string name="sar_head_level" translatable="false"></string>
-    <!-- Maximum Specific Absorption Rate for body -->
-    <string name="sar_body_level" translatable="false"></string>
-
-    <!-- IC Code for a device -->
-    <!-- Must be overlaid by device -->
-    <bool name="config_show_ic_enable" translatable="false">false</bool>
-    <!-- IC Code -->
-    <string name="ic_code" translatable="false"></string>
-    <string name="ic_model" translatable="false"></string>
-
-    <bool name="config_hide_wifi_region_code">false</bool>
-
-    <!-- Whether to disable allcaps default state of tabtext within datausage -->
-    <bool name="config_gcf_disable_default_tabtext_allcaps">false</bool>
+    <!-- Config voice over lte in wireless settings begin -->
+    <bool name="config_voice_over_lte_enabled">false</bool>
+    <!-- Config voice over lte in wireless settings end -->
 
     <!-- When true enable color temperature setting. -->
     <bool name="config_enableColorTemperature">false</bool>
 
-    <!-- When true Live lock screen settings will be positioned at the top -->
-    <bool name="config_showLiveLockScreenSettingsFirst">false</bool>
+    <bool name="config_video_call_datausage_enable">false</bool>
 
-    <!-- When true, weather options will be displayed in settings dashboard -->
-    <bool name="config_showWeatherMenu">true</bool>
+    <!-- carrier tethering default ssid and password begin -->
+    <bool name="use_empty_password_default">false</bool>
+    <bool name="hotspot_default_ssid_with_imei_enable">false</bool>
+    <!-- carrier tethering default ssid and password end -->
 
-    <!-- When true, "show built-in" option in Privacy Guard will be available -->
-    <bool name="config_showBuiltInAppsForPG">true</bool>
+    <!-- show tethering help begin -->
+    <bool name="tethering_show_help_for_first_using">false</bool>
+    <bool name="tethering_show_help_menu">false</bool>
+    <!-- show tethering help end -->
+    <!-- Config voice over lte in wireless settings begin -->
+    <bool name="config_voice_over_lte_enabled">false</bool>
+    <!-- Config voice over lte in wireless settings end -->
+    <!-- carrier tethering account check begin -->
+    <bool name="edit_hotspot_timeout_enable">false</bool>
+    <bool name="hotspot_accout_check_enable">false</bool>
+    <string name="hotspot_accout_check_server_url"></string>
+    <string name="hotspot_accout_up_sell_url"></string>
 
-    <!-- Defines the location of the fingerprint sensor on the device
-         0 = back
-         1 = front
-         2 = left side
-         3 = right side
-    -->
-    <integer name="config_fingerprintSensorLocation">0</integer>
+    <bool name="config_regional_usb_tethering_quick_start_enable">false</bool>
+    <bool name="config_regional_hotspot_tether_help_enable">false</bool>
+    <!-- Config to enable/disable the USB line-->
+    <bool name="config_usb_line_enable">false</bool>
+    <bool name="config_show_dialog_open_wifi_when_tethering_open">false</bool>
+    <bool name="config_regional_account_check_dialog_enable">false</bool>
+    <!-- Tethering & Mobile HotSpots display summary on Tmoblie -->
+    <bool name="config_tethering_settings_display_summary_Tmobile">false</bool>
 
-    <!-- Does the device allow for manual subscription provisioning? Only works for multi-sim devices,
-         and currently depends on QC's proprietary telephony stack -->
-    <bool name="config_enableManualSubProvisioning">true</bool>
+    <!-- Config to enable/disable wifi call notification -->
+    <bool name="config_regional_wifi_calling_notificaion_enable">false</bool>
+    <bool name="wifi_call_enhanced_setting">false</bool>
+
+    <!-- Config to show/hide Collect and diagnostics Preference UI option -->
+    <bool name="config_collect_diagnostics_enabled">false</bool>
+
+    <bool name="config_regional_hotspot_show_broadcast_ssid_checkbox">false</bool>
+    <bool name="config_regional_hotspot_show_maximum_connection_enable">false</bool>
+    <string-array translatable="false" name="carrier_operator_list">
+    </string-array>
 </resources>

@@ -25,19 +25,19 @@ import android.content.SyncStatusObserver;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.content.res.Resources.Theme;
-import android.content.res.ThemeConfig;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.UserHandle;
 import android.os.UserManager;
-import android.preference.PreferenceScreen;
+import android.support.v7.preference.PreferenceScreen;
 import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
 
 import com.android.settings.SettingsPreferenceFragment;
 import com.android.settings.Utils;
+import com.android.settingslib.accounts.AuthenticatorHelper;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -67,7 +67,7 @@ abstract class AccountPreferenceBase extends SettingsPreferenceFragment
         final Activity activity = getActivity();
         mUserHandle = Utils.getSecureTargetUser(activity.getActivityToken(), mUm, getArguments(),
                 activity.getIntent().getExtras());
-        mAuthenticatorHelper = new AuthenticatorHelper(activity, mUserHandle, mUm, this);
+        mAuthenticatorHelper = new AuthenticatorHelper(activity, mUserHandle, this);
     }
 
     /**
@@ -145,20 +145,16 @@ abstract class AccountPreferenceBase extends SettingsPreferenceFragment
             AuthenticatorDescription desc = null;
             try {
                 desc = mAuthenticatorHelper.getAccountTypeDescription(accountType);
-                if (desc != null && desc.accountPreferencesId != 0) {
+                if (desc != null && desc.accountPreferencesId != 0
+                        && Utils.showAccount(getActivity(), accountType)) {
                     // Load the context of the target package, then apply the
                     // base Settings theme (no references to local resources)
                     // and create a context theme wrapper so that we get the
                     // correct text colors. Control colors will still be wrong,
                     // but there's not much we can do about it since we can't
                     // reference local color resources.
-                    final ThemeConfig themeConfig = getActivity().getResources()
-                            .getConfiguration().themeConfig;
-                    final String themePkgName = themeConfig != null
-                            ? themeConfig.getOverlayPkgNameForApp(getActivity().getPackageName())
-                            : null;
                     final Context targetCtx = getActivity().createPackageContextAsUser(
-                            desc.packageName, themePkgName, 0, mUserHandle);
+                            desc.packageName, 0, mUserHandle);
                     final Theme baseTheme = getResources().newTheme();
                     baseTheme.applyStyle(com.android.settings.R.style.Theme_SettingsBase, true);
                     final Context themedCtx = new ContextThemeWrapper(targetCtx, 0);
