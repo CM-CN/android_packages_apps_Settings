@@ -77,6 +77,7 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     /** If there is no setting in the provider, use this. */
     private static final int FALLBACK_SCREEN_TIMEOUT_VALUE = 30000;
 
+    private static final String STATUS_BAR_NETWORK_TRAFFIC_STYLE = "status_bar_network_traffic_style";
     private static final String KEY_CATEGORY_DISPLAY = "display";
     private static final String KEY_SCREEN_TIMEOUT = "screen_timeout";
     private static final String KEY_FONT_SIZE = "font_size";
@@ -104,6 +105,7 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     private SwitchPreference mAutoBrightnessPreference;
     private SwitchPreference mCameraGesturePreference;
     private SwitchPreference mCameraDoubleTapPowerGesturePreference;
+    private ListPreference mStatusBarNetworkTraffic;
 
     @Override
     protected int getMetricsCategory() {
@@ -127,6 +129,14 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
                         com.android.internal.R.bool.config_dreamsSupported) == false) {
             getPreferenceScreen().removePreference(mScreenSaverPreference);
         }
+
+        mStatusBarNetworkTraffic = (ListPreference) findPreference(STATUS_BAR_NETWORK_TRAFFIC_STYLE);
+        int networkTrafficStyle = Settings.System.getInt(resolver,
+                Settings.System.STATUS_BAR_NETWORK_TRAFFIC_STYLE, 3);
+        mStatusBarNetworkTraffic.setValue(String.valueOf(networkTrafficStyle));
+        mStatusBarNetworkTraffic
+                .setSummary(mStatusBarNetworkTraffic.getEntry());
+        mStatusBarNetworkTraffic.setOnPreferenceChangeListener(this);
 
         mScreenTimeoutPreference = (TimeoutListPreference) findPreference(KEY_SCREEN_TIMEOUT);
 
@@ -466,6 +476,17 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
             boolean value = (Boolean) objValue;
             Settings.Secure.putInt(getContentResolver(), CAMERA_GESTURE_DISABLED,
                     value ? 0 : 1 /* Backwards because setting is for disabling */);
+        }
+        if (preference == mStatusBarNetworkTraffic) {
+	    String newValue = (String) objValue;
+             int networkTrafficStyle = Integer.valueOf((String) newValue);
+             int index = mStatusBarNetworkTraffic
+                     .findIndexOfValue((String) newValue);
+             Settings.System.putInt(getContentResolver(),
+                     Settings.System.STATUS_BAR_NETWORK_TRAFFIC_STYLE,
+                     networkTrafficStyle);
+             mStatusBarNetworkTraffic.setSummary(mStatusBarNetworkTraffic
+                     .getEntries()[index]);
         }
         if (preference == mCameraDoubleTapPowerGesturePreference) {
             boolean value = (Boolean) objValue;
