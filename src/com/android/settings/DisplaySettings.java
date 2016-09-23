@@ -77,6 +77,7 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     /** If there is no setting in the provider, use this. */
     private static final int FALLBACK_SCREEN_TIMEOUT_VALUE = 30000;
 
+    private static final String THREE_FINGER_GESTURE = "three_finger_gesture";
     private static final String KEYGUARD_TOGGLE_TORCH = "keyguard_toggle_torch";
     private static final String STATUS_BAR_NETWORK_TRAFFIC_STYLE = "status_bar_network_traffic_style";
     private static final String KEY_CATEGORY_DISPLAY = "display";
@@ -107,6 +108,7 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     private SwitchPreference mCameraGesturePreference;
     private SwitchPreference mCameraDoubleTapPowerGesturePreference;
     private SwitchPreference mKeyguardToggleTorch;
+    private SwitchPreference mThreeFingerGesture;
 
     private ListPreference mStatusBarNetworkTraffic;
 
@@ -146,6 +148,12 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
         mKeyguardToggleTorch.setChecked((Settings.System.getInt(resolver,
                 Settings.System.KEYGUARD_TOGGLE_TORCH, 0) == 1));
         mKeyguardToggleTorch.setOnPreferenceChangeListener(this);
+
+        mThreeFingerGesture =
+                (SwitchPreference) findPreference(THREE_FINGER_GESTURE);
+        mThreeFingerGesture.setChecked((Settings.System.getInt(resolver,
+                Settings.System.THREE_FINGER_GESTURE, 0) == 1));
+        mThreeFingerGesture.setOnPreferenceChangeListener(this);
 
         mScreenTimeoutPreference = (TimeoutListPreference) findPreference(KEY_SCREEN_TIMEOUT);
 
@@ -505,6 +513,11 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
         if (preference == mKeyguardToggleTorch) {
             Settings.System.putInt(getContentResolver(),
                     Settings.System.KEYGUARD_TOGGLE_TORCH,
+                    (Boolean) objValue ? 1 : 0);
+        }
+        if (preference == mThreeFingerGesture) {
+            Settings.System.putInt(getContentResolver(),
+                    Settings.System.THREE_FINGER_GESTURE,
                     (Boolean) objValue ? 1 : 0);
         }
         if (preference == mNightModePreference) {
