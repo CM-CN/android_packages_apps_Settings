@@ -60,4 +60,11 @@
     <string name="kill_app_longpress_back">返回键杀死应用程序</string>
     <string name="kill_app_longpress_back_summary">通过长时间按下返回键杀死前台应用程序</string>
 
+    <!-- long press back to kill configurable timeout -->
+    <string name="kill_app_longpress_timeout_title">返回键强行关闭延迟</string>
+    <string name="timeout_2000">2 秒 (默认)</string>
+    <string name="timeout_1500">1,5 秒</string>
+    <string name="timeout_1000">1 秒</string>
+    <string name="timeout_500">0,5 秒</string>
+
 </resources>
