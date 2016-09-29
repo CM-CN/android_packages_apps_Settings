@@ -42,6 +42,7 @@ import android.support.v7.preference.ListPreference;
 import android.support.v7.preference.Preference;
 import android.support.v7.preference.Preference.OnPreferenceChangeListener;
 import android.support.v7.preference.PreferenceCategory;
+import com.android.settings.sdhz150.SeekBarPreference;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -77,6 +78,7 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     /** If there is no setting in the provider, use this. */
     private static final int FALLBACK_SCREEN_TIMEOUT_VALUE = 30000;
 
+	private static final String PREF_QS_TRANSPARENT_SHADE = "qs_transparent_shade";
     private static final String THREE_FINGER_GESTURE = "three_finger_gesture";
     private static final String KEYGUARD_TOGGLE_TORCH = "keyguard_toggle_torch";
     private static final String STATUS_BAR_NETWORK_TRAFFIC_STYLE = "status_bar_network_traffic_style";
@@ -111,6 +113,7 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     private SwitchPreference mThreeFingerGesture;
 
     private ListPreference mStatusBarNetworkTraffic;
+    private SeekBarPreference mQSShadeAlpha;
 
     @Override
     protected int getMetricsCategory() {
@@ -134,6 +137,13 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
                         com.android.internal.R.bool.config_dreamsSupported) == false) {
             getPreferenceScreen().removePreference(mScreenSaverPreference);
         }
+
+        // QS shade alpha
+        mQSShadeAlpha = (SeekBarPreference) findPreference(PREF_QS_TRANSPARENT_SHADE);
+        int qSShadeAlpha = Settings.System.getInt(getContentResolver(),
+                Settings.System.QS_TRANSPARENT_SHADE, 255);
+        mQSShadeAlpha.setValue(qSShadeAlpha / 1);
+        mQSShadeAlpha.setOnPreferenceChangeListener(this);
 
         mStatusBarNetworkTraffic = (ListPreference) findPreference(STATUS_BAR_NETWORK_TRAFFIC_STYLE);
         int networkTrafficStyle = Settings.System.getInt(resolver,
@@ -504,6 +514,11 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
                      networkTrafficStyle);
              mStatusBarNetworkTraffic.setSummary(mStatusBarNetworkTraffic
                      .getEntries()[index]);
+        }
+        if (preference == mQSShadeAlpha) {
+            int alpha = (Integer) objValue;
+            Settings.System.putInt(getContentResolver(),
+                    Settings.System.QS_TRANSPARENT_SHADE, alpha * 1);
         }
         if (preference == mCameraDoubleTapPowerGesturePreference) {
             boolean value = (Boolean) objValue;
