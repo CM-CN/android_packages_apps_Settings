@@ -71,4 +71,5 @@
 
     <!-- QS shade transparency -->
     <string name="qs_transparent_shade">QS shade transparency</string>
+    <string name="volume_dialog_transparency">Volume dialog transparency</string>
 </resources>
