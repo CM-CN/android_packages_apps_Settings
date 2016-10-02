@@ -601,17 +601,6 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
                     Settings.System.THREE_FINGER_GESTURE,
                     (Boolean) objValue ? 1 : 0);
         }
-        if (preference == mStatusBarNetworkTraffic) {
-	    String newValue = (String) objValue;
-             int networkTrafficStyle = Integer.valueOf((String) newValue);
-             int index = mStatusBarNetworkTraffic
-                     .findIndexOfValue((String) newValue);
-             Settings.System.putInt(getContentResolver(),
-                     Settings.System.STATUS_BAR_NETWORK_TRAFFIC_STYLE,
-                     networkTrafficStyle);
-             mStatusBarNetworkTraffic.setSummary(mStatusBarNetworkTraffic
-                     .getEntries()[index]);
-        }
         if (preference == mStatusBarCarrier) {
              boolean value = (Boolean) objValue;
              Settings.System.putInt(getContentResolver(),
