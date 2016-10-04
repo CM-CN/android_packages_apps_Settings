@@ -395,4 +395,11 @@
 
     </PreferenceCategory>
 
+    <!-- OmniSwitch -->
+    <PreferenceScreen
+        android:key="omniswitch"
+        android:id="@+id/omniswitch"
+        android:title="@string/omniswitch_settings_title"
+        android:fragment="com.crdroid.settings.fragments.OmniSwitch" />
+
 </PreferenceScreen>

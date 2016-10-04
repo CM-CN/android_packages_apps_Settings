@@ -118,4 +118,17 @@
     <string name="block_on_secure_keyguard_summary">禁用锁屏通知栏下拉，非安全锁屏无效</string>
     <string name="notifications_transparency">锁屏通知扩展背景透明度</string>
     <string name="shake_clean_notification">通知栏通知晃动清理</string>
+
+    <!-- OmniSwitch -->
+    <string name="recents_use_omniswitch_title">Omni最近应用</string>
+    <string name="recents_use_omniswitch_summary">使用OmniSwitch而不是默认缩略图视图</string>
+    <string name="omniswitch_start_settings_title">设置</string>
+    <string name="omniswitch_start_settings_summary">打开OmniSwitch的设置</string>
+    <string name="omniswitch_first_time_title">信息</string>
+    <string name="omniswitch_first_time_message">确保您已启用OmniSwitch。 您可以使用下面的“设置\</string>
+    <string name="omniswitch_settings_title">Omni最近应用开关</string>
+    <!-- Optional screenshot type -->
+    <string name="screenshot_type_title">屏幕截图类型</string>
+    <string name="screenshot_type_fullscreen">采取全屏幕截图</string>
+    <string name="screenshot_type_partial">在要作为屏幕截图拍摄的区域上拖动选择</string>
 </resources>
