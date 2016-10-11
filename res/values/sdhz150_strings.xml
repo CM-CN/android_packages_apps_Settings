@@ -114,4 +114,7 @@
     <!-- SU indicator -->
     <string name="show_su_indicator_title">Enable SU icon</string>
     <string name="show_su_indicator_summary">Option to enable or disable native superuser icon</string>
+    <!-- Show lte/4g switch -->
+    <string name="show_lte_fourgee_title">Show 4G instead of LTE</string>
+    <string name="show_lte_fourgee_summary">Replaces LTE statusbar indicator with 4G</string>
 </resources>
