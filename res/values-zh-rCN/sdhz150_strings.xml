@@ -109,4 +109,8 @@
   <!-- Show lte/4g switch -->
   <string name="show_lte_fourgee_title">信号标识符4G代替LTE</string>
   <string name="show_lte_fourgee_summary">4G状态指示器取代 LTE</string>
+  <!-- Power menu and dialogs transparency -->
+  <string name="power_menu_transparency">电源/重新启动菜单透明度</string>
+  <!-- Power/reboot dialogs dim amount -->
+  <string name="power_menu_dialog_dim">电源/重启对话框背景量</string>
 </resources>

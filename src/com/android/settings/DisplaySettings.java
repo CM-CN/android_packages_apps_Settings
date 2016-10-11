@@ -45,6 +45,7 @@ import android.support.v7.preference.PreferenceScreen;
 import android.support.v7.preference.Preference.OnPreferenceChangeListener;
 import android.support.v7.preference.PreferenceCategory;
 import com.android.settings.sdhz150.SeekBarPreference;
+import com.android.settings.sdhz150.SeekBarPreferenceA;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -88,6 +89,8 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     /** If there is no setting in the provider, use this. */
     private static final int FALLBACK_SCREEN_TIMEOUT_VALUE = 30000;
 
+    private static final String TRANSPARENT_POWER_MENU = "transparent_power_menu";
+    private static final String TRANSPARENT_POWER_DIALOG_DIM = "transparent_power_dialog_dim";
     private static final String KEY_LISTVIEW_ANIMATION = "listview_animation";
     private static final String KEY_LISTVIEW_INTERPOLATOR = "listview_interpolator";
     private static final String STATUS_BAR_CARRIER = "status_bar_carrier";
@@ -134,6 +137,8 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
 
     private SeekBarPreference mQSShadeAlpha;
     private SeekBarPreference mVolumeDialogAlpha;
+    private SeekBarPreferenceA  mPowerMenuAlpha;
+    private SeekBarPreferenceA  mPowerDialogDim;
 
     private SwitchPreference mStatusBarCarrier;
     private PreferenceScreen mCustomCarrierLabel;
@@ -212,6 +217,20 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
                 Settings.System.TRANSPARENT_VOLUME_DIALOG, 255);
         mVolumeDialogAlpha.setValue(volumeDialogAlpha / 1);
         mVolumeDialogAlpha.setOnPreferenceChangeListener(this);
+
+            // Power menu alpha
+            mPowerMenuAlpha = (SeekBarPreferenceA) findPreference(TRANSPARENT_POWER_MENU);
+            int powerMenuAlpha = Settings.System.getInt(resolver,
+                    Settings.System.TRANSPARENT_POWER_MENU, 100);
+            mPowerMenuAlpha.setValue(powerMenuAlpha / 1);
+            mPowerMenuAlpha.setOnPreferenceChangeListener(this);
+
+            // Power/reboot dialog dim
+            mPowerDialogDim = (SeekBarPreferenceA) findPreference(TRANSPARENT_POWER_DIALOG_DIM);
+            int powerDialogDim = Settings.System.getInt(resolver,
+                    Settings.System.TRANSPARENT_POWER_DIALOG_DIM, 50);
+            mPowerDialogDim.setValue(powerDialogDim / 1);
+            mPowerDialogDim.setOnPreferenceChangeListener(this);
 
         mStatusBarNetworkTraffic = (ListPreference) findPreference(STATUS_BAR_NETWORK_TRAFFIC_STYLE);
         int networkTrafficStyle = Settings.System.getInt(resolver,
@@ -618,6 +637,16 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
           int alpha = (Integer) objValue;
           Settings.System.putInt(getContentResolver(),
                   Settings.System.TRANSPARENT_VOLUME_DIALOG, alpha * 1);
+        }
+        if (preference == mPowerMenuAlpha) {
+          int alpha = (Integer) objValue;
+          Settings.System.putInt(getContentResolver(),
+                  Settings.System.TRANSPARENT_POWER_MENU, alpha * 1);
+        }
+        if (preference == mPowerDialogDim) {
+          int alpha = (Integer) objValue;
+          Settings.System.putInt(getContentResolver(),
+                  Settings.System.TRANSPARENT_POWER_DIALOG_DIM, alpha * 1);
         }
         if (preference == mCameraDoubleTapPowerGesturePreference) {
             boolean value = (Boolean) objValue;
