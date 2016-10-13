@@ -259,4 +259,27 @@
     <string name="pa_login_incorrect_login">登录错误</string>
     <string name="pa_pattern_or_fingerprint_header">必须绘制图案，或使用指纹解锁</string>
 
+    <!-- title for lock screen blur preference -->
+    <string name="lockscreen_blur_enabled_title">模糊的锁屏</string>
+
+    <!-- Proximity wake -->
+    <string name="proximity_wake_title">防止意外的唤醒</string>
+    <string name="proximity_wake_summary">在唤醒屏幕之前检查接近传感器</string>
+
+    <!-- High touch sensitivity -->
+    <string name="high_touch_sensitivity_title">触摸灵敏度高</string>
+    <string name="high_touch_sensitivity_summary">I增加触摸屏灵敏度可以戴上手套时使用</string>
+
+    <!-- Touchscreen hovering -->
+    <string name="touchscreen_hovering_title">触摸屏悬停</string>
+    <string name="touchscreen_hovering_summary">允许您在网络浏览器，远程桌面等中将鼠标悬停在屏幕上</string>
+
+    <!-- Whether to display IME switcher notifcation -->
+    <string name="ime_switcher_notify">选择器通知</string>
+    <string name="ime_switcher_notify_summary">显示输入法选择器通知</string>
+
+    <!-- Stylus Icon -->
+    <string name="stylus_icon_enabled_title">使用触控笔时显示图标</string>
+    <string name="stylus_icon_enabled_summary">使用指示笔悬停或绘制时显示指针图标</string>
+
 </resources>
