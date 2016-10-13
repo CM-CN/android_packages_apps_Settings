@@ -141,6 +141,8 @@
             </intent-filter>
         </activity>
 
+        <activity android:name="com.crdroid.settings.fragments.HAFRAppListActivity" />
+
         <activity android:name=".Settings$PersonalSettings"
             android:label="@string/header_category_personal">
             <intent-filter android:priority="2">

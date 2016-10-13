@@ -113,4 +113,9 @@
   <string name="power_menu_transparency">电源/重新启动菜单透明度</string>
   <!-- Power/reboot dialogs dim amount -->
   <string name="power_menu_dialog_dim">电源/重启对话框背景量</string>
+    <!-- Hide Apps from Recents -->
+    <string name="hide_apps_from_recents_title">隐藏应用程序</string>
+    <string name="hide_from_recents_add_app">添加应用程序</string>
+    <string name="hide_apps_from_recents_summary">选择哪些应用程序排除从历史面板</string>
+    <string name="recents_settings_title">最近应用</string>
 </resources>

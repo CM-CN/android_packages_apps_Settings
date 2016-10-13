@@ -279,5 +279,20 @@
                 android:defaultValue="0" />
 
     	</PreferenceCategory>
+ 
+      <PreferenceCategory
+            android:key="recents_prefs"
+            android:title="@string/recents_settings_title">
+
+         <PreferenceScreen
+             android:key="hide_app_from_recents"
+             android:title="@string/hide_apps_from_recents_title"
+             android:summary="@string/hide_apps_from_recents_summary" >
+             <intent android:action="android.intent.action.MAIN"
+                 android:targetPackage="com.android.settings"
+                 android:targetClass="com.crdroid.settings.fragments.HAFRAppListActivity" />
+         </PreferenceScreen>
+
+      </PreferenceCategory>
 
 </PreferenceScreen>
