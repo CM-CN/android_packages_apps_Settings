@@ -190,6 +190,12 @@
                	android:summary="@string/show_su_indicator_summary"
                	android:defaultValue="true" />
 
+            <com.android.settings.sdhz150.SystemSettingSwitchPreference
+             	android:key="force_expanded_notifications"
+             	android:title="@string/force_expanded_notifications_title"
+             	android:summary="@string/force_expanded_notifications_summary" />
+               	android:defaultValue="false" />
+
         </PreferenceCategory>
 
       <PreferenceCategory

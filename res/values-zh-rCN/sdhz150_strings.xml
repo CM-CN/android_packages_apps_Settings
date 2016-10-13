@@ -126,4 +126,7 @@
     <string name="immersive_recents_fullscreen">全屏</string>
     <string name="immersive_recents_statusbar">仅状态栏</string>
     <string name="immersive_recents_navbar">仅导航栏</string>
+    <!-- Force expanded notifications -->
+    <string name="force_expanded_notifications_title">扩展通知</string>
+    <string name="force_expanded_notifications_summary">支持扩展通知的强制应用程序</string>
 </resources>
