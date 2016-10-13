@@ -89,6 +89,7 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     /** If there is no setting in the provider, use this. */
     private static final int FALLBACK_SCREEN_TIMEOUT_VALUE = 30000;
 
+    private static final String IMMERSIVE_RECENTS = "immersive_recents";
     private static final String TRANSPARENT_POWER_MENU = "transparent_power_menu";
     private static final String TRANSPARENT_POWER_DIALOG_DIM = "transparent_power_dialog_dim";
     private static final String KEY_LISTVIEW_ANIMATION = "listview_animation";
@@ -134,6 +135,7 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     private ListPreference mStatusBarNetworkTraffic;
     private ListPreference mListViewAnimation;
     private ListPreference mListViewInterpolator;
+    private ListPreference mImmersiveRecents;
 
     private SeekBarPreference mQSShadeAlpha;
     private SeekBarPreference mVolumeDialogAlpha;
@@ -217,6 +219,12 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
                 Settings.System.TRANSPARENT_VOLUME_DIALOG, 255);
         mVolumeDialogAlpha.setValue(volumeDialogAlpha / 1);
         mVolumeDialogAlpha.setOnPreferenceChangeListener(this);
+
+        mImmersiveRecents = (ListPreference) findPreference(IMMERSIVE_RECENTS);
+        mImmersiveRecents.setValue(String.valueOf(Settings.System.getInt(
+                resolver, Settings.System.IMMERSIVE_RECENTS, 0)));
+        mImmersiveRecents.setSummary(mImmersiveRecents.getEntry());
+        mImmersiveRecents.setOnPreferenceChangeListener(this);
 
             // Power menu alpha
             mPowerMenuAlpha = (SeekBarPreferenceA) findPreference(TRANSPARENT_POWER_MENU);
@@ -647,6 +655,12 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
           int alpha = (Integer) objValue;
           Settings.System.putInt(getContentResolver(),
                   Settings.System.TRANSPARENT_POWER_DIALOG_DIM, alpha * 1);
+        }
+        if (preference == mImmersiveRecents) {
+            Settings.System.putInt(getContentResolver(), Settings.System.IMMERSIVE_RECENTS,
+                    Integer.valueOf((String) objValue));
+            mImmersiveRecents.setValue(String.valueOf(objValue));
+            mImmersiveRecents.setSummary(mImmersiveRecents.getEntry());
         }
         if (preference == mCameraDoubleTapPowerGesturePreference) {
             boolean value = (Boolean) objValue;

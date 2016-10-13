@@ -118,4 +118,12 @@
     <string name="hide_from_recents_add_app">添加应用程序</string>
     <string name="hide_apps_from_recents_summary">选择哪些应用程序排除从历史面板</string>
     <string name="recents_settings_title">最近应用</string>
+    <!-- Immersive Recents -->
+    <string name="immersive_recents_title">最近应用沉浸模式</string>
+    <string name="immersive_recents_summary">更改最近应用屏幕视图沉浸模式</string>
+    <string name="immersive_recents_dialog_title">选择最近视图</string>
+    <string name="immersive_recents_default">默认</string>
+    <string name="immersive_recents_fullscreen">全屏</string>
+    <string name="immersive_recents_statusbar">仅状态栏</string>
+    <string name="immersive_recents_navbar">仅导航栏</string>
 </resources>
