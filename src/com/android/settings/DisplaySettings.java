@@ -91,6 +91,9 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     /** If there is no setting in the provider, use this. */
     private static final int FALLBACK_SCREEN_TIMEOUT_VALUE = 30000;
 
+    private static final String PREF_ROWS_PORTRAIT = "qs_rows_portrait";
+    private static final String PREF_ROWS_LANDSCAPE = "qs_rows_landscape";
+    private static final String PREF_COLUMNS = "qs_columns";
     private static final String IMMERSIVE_RECENTS = "immersive_recents";
     private static final String TRANSPARENT_POWER_MENU = "transparent_power_menu";
     private static final String TRANSPARENT_POWER_DIALOG_DIM = "transparent_power_dialog_dim";
@@ -138,6 +141,9 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     private ListPreference mListViewAnimation;
     private ListPreference mListViewInterpolator;
     private ListPreference mImmersiveRecents;
+    private ListPreference mRowsPortrait;
+    private ListPreference mRowsLandscape;
+    private ListPreference mQsColumns;
 
     private SeekBarPreference mQSShadeAlpha;
     private SeekBarPreference mVolumeDialogAlpha;
@@ -214,6 +220,28 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
                 Settings.System.QS_TRANSPARENT_SHADE, 255);
         mQSShadeAlpha.setValue(qSShadeAlpha / 1);
         mQSShadeAlpha.setOnPreferenceChangeListener(this);
+        mRowsPortrait = (ListPreference) findPreference(PREF_ROWS_PORTRAIT);
+        int rowsPortrait = Settings.Secure.getInt(getContentResolver(),
+                Settings.Secure.QS_ROWS_PORTRAIT, 3);
+        mRowsPortrait.setValue(String.valueOf(rowsPortrait));
+        mRowsPortrait.setSummary(mRowsPortrait.getEntry());
+        mRowsPortrait.setOnPreferenceChangeListener(this);
+
+        int defaultValue;
+        defaultValue = getResources().getInteger(com.android.internal.R.integer.config_qs_num_rows_landscape_default);
+        mRowsLandscape = (ListPreference) findPreference(PREF_ROWS_LANDSCAPE);
+        int rowsLandscape = Settings.Secure.getInt(getContentResolver(),
+                Settings.Secure.QS_ROWS_LANDSCAPE, defaultValue);
+        mRowsLandscape.setValue(String.valueOf(rowsLandscape));
+        mRowsLandscape.setSummary(mRowsLandscape.getEntry());
+        mRowsLandscape.setOnPreferenceChangeListener(this);
+
+        mQsColumns = (ListPreference) findPreference(PREF_COLUMNS);
+        int columnsQs = Settings.Secure.getInt(getContentResolver(),
+                Settings.Secure.QS_COLUMNS, 3);
+        mQsColumns.setValue(String.valueOf(columnsQs));
+        mQsColumns.setSummary(mQsColumns.getEntry());
+        mQsColumns.setOnPreferenceChangeListener(this);
 
         // Volume dialog alpha
         mVolumeDialogAlpha = (SeekBarPreference) findPreference(PREF_TRANSPARENT_VOLUME_DIALOG);
@@ -623,6 +651,27 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
                      networkTrafficStyle);
              mStatusBarNetworkTraffic.setSummary(mStatusBarNetworkTraffic
                      .getEntries()[index]);
+        }
+        if (preference == mRowsPortrait) {
+            int intValue = Integer.valueOf((String) objValue);
+            int index = mRowsPortrait.findIndexOfValue((String) objValue);
+            Settings.Secure.putInt(getContentResolver(),
+                    Settings.Secure.QS_ROWS_PORTRAIT, intValue);
+            preference.setSummary(mRowsPortrait.getEntries()[index]);
+        }
+        if (preference == mRowsLandscape) {
+            int intValue = Integer.valueOf((String) objValue);
+            int index = mRowsLandscape.findIndexOfValue((String) objValue);
+            Settings.Secure.putInt(getContentResolver(),
+                    Settings.Secure.QS_ROWS_LANDSCAPE, intValue);
+            preference.setSummary(mRowsLandscape.getEntries()[index]);
+        }
+        if (preference == mQsColumns) {
+            int intValue = Integer.valueOf((String) objValue);
+            int index = mQsColumns.findIndexOfValue((String) objValue);
+            Settings.Secure.putInt(getContentResolver(),
+                    Settings.Secure.QS_COLUMNS, intValue);
+            preference.setSummary(mQsColumns.getEntries()[index]);
         }
         if (preference == mQSShadeAlpha) {
             int alpha = (Integer) objValue;
