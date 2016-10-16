@@ -252,7 +252,8 @@
 
      </PreferenceCategory>
 
-    <PreferenceCategory 
+    <PreferenceCategory
+         android:key="lock_screen_shade"
     	android:title="@string/lockscreen_misc_category">
 
         <com.android.settings.sdhz150.SystemSettingSwitchPreference
@@ -261,13 +262,14 @@
                android:summary="@string/lockscreen_maxnotif_sumary"
                android:defaultValue="false" />
 
-        <com.android.settings.sdhz150.SeekBarPreferenceA
+        <com.android.settings.sdhz150.LockscreenSeekBarPreference
                android:key="lockscreen_max_notif_cofig"
                android:title="@string/lockscreen_maxnotif_config"
-               android:max="8"
+               android:max="10"
                settings:min="0"
                settings:units=""
-               android:persistent="false" />
+               android:persistent="false"
+               android:dependency="lock_screen_custom_notif" />
 
     </PreferenceCategory>
 

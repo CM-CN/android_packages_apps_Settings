@@ -46,6 +46,7 @@ import android.support.v7.preference.Preference.OnPreferenceChangeListener;
 import android.support.v7.preference.PreferenceCategory;
 import com.android.settings.sdhz150.SeekBarPreference;
 import com.android.settings.sdhz150.SeekBarPreferenceA;
+import com.android.settings.sdhz150.LockscreenSeekBarPreference;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -150,7 +151,7 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     private SeekBarPreference mVolumeDialogAlpha;
     private SeekBarPreferenceA  mPowerMenuAlpha;
     private SeekBarPreferenceA  mPowerDialogDim;
-    private SeekBarPreferenceA mMaxKeyguardNotifConfig;
+    private LockscreenSeekBarPreference mMaxKeyguardNotifConfig;
 
     private SwitchPreference mStatusBarCarrier;
     private PreferenceScreen mCustomCarrierLabel;
@@ -245,7 +246,7 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
         mQsColumns.setSummary(mQsColumns.getEntry());
         mQsColumns.setOnPreferenceChangeListener(this);
 
-        mMaxKeyguardNotifConfig = (SeekBarPreferenceA) findPreference(LOCKSCREEN_MAX_NOTIF_CONFIG);
+        mMaxKeyguardNotifConfig = (LockscreenSeekBarPreference) findPreference(LOCKSCREEN_MAX_NOTIF_CONFIG);
         int kgconf = Settings.System.getInt(getContentResolver(),
                 Settings.System.LOCKSCREEN_MAX_NOTIF_CONFIG, 5);
         mMaxKeyguardNotifConfig.setValue(kgconf / 1);
