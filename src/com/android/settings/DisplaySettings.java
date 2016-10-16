@@ -91,6 +91,7 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     /** If there is no setting in the provider, use this. */
     private static final int FALLBACK_SCREEN_TIMEOUT_VALUE = 30000;
 
+    private static final String LOCKSCREEN_MAX_NOTIF_CONFIG = "lockscreen_max_notif_cofig";
     private static final String PREF_ROWS_PORTRAIT = "qs_rows_portrait";
     private static final String PREF_ROWS_LANDSCAPE = "qs_rows_landscape";
     private static final String PREF_COLUMNS = "qs_columns";
@@ -149,6 +150,7 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     private SeekBarPreference mVolumeDialogAlpha;
     private SeekBarPreferenceA  mPowerMenuAlpha;
     private SeekBarPreferenceA  mPowerDialogDim;
+    private SeekBarPreferenceA mMaxKeyguardNotifConfig;
 
     private SwitchPreference mStatusBarCarrier;
     private PreferenceScreen mCustomCarrierLabel;
@@ -242,6 +244,12 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
         mQsColumns.setValue(String.valueOf(columnsQs));
         mQsColumns.setSummary(mQsColumns.getEntry());
         mQsColumns.setOnPreferenceChangeListener(this);
+
+        mMaxKeyguardNotifConfig = (SeekBarPreferenceA) findPreference(LOCKSCREEN_MAX_NOTIF_CONFIG);
+        int kgconf = Settings.System.getInt(getContentResolver(),
+                Settings.System.LOCKSCREEN_MAX_NOTIF_CONFIG, 5);
+        mMaxKeyguardNotifConfig.setValue(kgconf / 1);
+        mMaxKeyguardNotifConfig.setOnPreferenceChangeListener(this);
 
         // Volume dialog alpha
         mVolumeDialogAlpha = (SeekBarPreference) findPreference(PREF_TRANSPARENT_VOLUME_DIALOG);
@@ -672,6 +680,11 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
             Settings.Secure.putInt(getContentResolver(),
                     Settings.Secure.QS_COLUMNS, intValue);
             preference.setSummary(mQsColumns.getEntries()[index]);
+        }
+        if (preference == mMaxKeyguardNotifConfig) {
+            int kgconf = (Integer) objValue;
+            Settings.System.putInt(getContentResolver(),
+                    Settings.System.LOCKSCREEN_MAX_NOTIF_CONFIG, kgconf);
         }
         if (preference == mQSShadeAlpha) {
             int alpha = (Integer) objValue;

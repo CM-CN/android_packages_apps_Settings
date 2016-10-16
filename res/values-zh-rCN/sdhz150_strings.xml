@@ -134,4 +134,9 @@
     <string name="qs_rows_portrait_title">行（纵向）</string>
     <string name="qs_rows_landscape_title">行(横向)</string>
     <string name="qs_columns_title">列</string>
+    <!-- Lockscreen notif count -->
+    <string name="lockscreen_maxnotif_title">通知计数</string>
+    <string name="lockscreen_maxnotif_sumary">启用通知调整</string>
+    <string name="lockscreen_maxnotif_config">允许的最大通知</string>
+    <string name="lockscreen_misc_category">锁屏通知计数</string>
 </resources>

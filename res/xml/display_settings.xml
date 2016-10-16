@@ -252,6 +252,25 @@
 
      </PreferenceCategory>
 
+    <PreferenceCategory 
+    	android:title="@string/lockscreen_misc_category">
+
+        <com.android.settings.sdhz150.SystemSettingSwitchPreference
+               android:key="lock_screen_custom_notif"
+               android:title="@string/lockscreen_maxnotif_title"
+               android:summary="@string/lockscreen_maxnotif_sumary"
+               android:defaultValue="false" />
+
+        <com.android.settings.sdhz150.SeekBarPreferenceA
+               android:key="lockscreen_max_notif_cofig"
+               android:title="@string/lockscreen_maxnotif_config"
+               android:max="8"
+               settings:min="0"
+               settings:units=""
+               android:persistent="false" />
+
+    </PreferenceCategory>
+
         <PreferenceCategory
             android:key="show_status_carrier_options"
             android:title="@string/show_status_bar_carrier_title" >
