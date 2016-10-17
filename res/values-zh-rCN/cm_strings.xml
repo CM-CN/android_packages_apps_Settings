@@ -42,7 +42,7 @@
     <string name="root_appops_summary">查看和控制根规则</string>
 
     <!-- About phone screen, CyanogenMod version -->
-    <string name="mod_version">CyanogenMod版本</string>
+    <string name="mod_version">sdhz150本地化版本</string>
     <string name="mod_version_default">未知</string>
 
     <!-- About phone screen, CyanogenMod Api Level -->
