@@ -94,7 +94,6 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
 
     private static final String LOCKSCREEN_MAX_NOTIF_CONFIG = "lockscreen_max_notif_cofig";
     private static final String PREF_ROWS_PORTRAIT = "qs_rows_portrait";
-    private static final String PREF_ROWS_LANDSCAPE = "qs_rows_landscape";
     private static final String PREF_COLUMNS = "qs_columns";
     private static final String IMMERSIVE_RECENTS = "immersive_recents";
     private static final String TRANSPARENT_POWER_MENU = "transparent_power_menu";
@@ -144,7 +143,6 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     private ListPreference mListViewInterpolator;
     private ListPreference mImmersiveRecents;
     private ListPreference mRowsPortrait;
-    private ListPreference mRowsLandscape;
     private ListPreference mQsColumns;
 
     private SeekBarPreference mQSShadeAlpha;
@@ -229,15 +227,6 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
         mRowsPortrait.setValue(String.valueOf(rowsPortrait));
         mRowsPortrait.setSummary(mRowsPortrait.getEntry());
         mRowsPortrait.setOnPreferenceChangeListener(this);
-
-        int defaultValue;
-        defaultValue = getResources().getInteger(com.android.internal.R.integer.config_qs_num_rows_landscape_default);
-        mRowsLandscape = (ListPreference) findPreference(PREF_ROWS_LANDSCAPE);
-        int rowsLandscape = Settings.Secure.getInt(getContentResolver(),
-                Settings.Secure.QS_ROWS_LANDSCAPE, defaultValue);
-        mRowsLandscape.setValue(String.valueOf(rowsLandscape));
-        mRowsLandscape.setSummary(mRowsLandscape.getEntry());
-        mRowsLandscape.setOnPreferenceChangeListener(this);
 
         mQsColumns = (ListPreference) findPreference(PREF_COLUMNS);
         int columnsQs = Settings.Secure.getInt(getContentResolver(),
@@ -667,13 +656,6 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
             Settings.Secure.putInt(getContentResolver(),
                     Settings.Secure.QS_ROWS_PORTRAIT, intValue);
             preference.setSummary(mRowsPortrait.getEntries()[index]);
-        }
-        if (preference == mRowsLandscape) {
-            int intValue = Integer.valueOf((String) objValue);
-            int index = mRowsLandscape.findIndexOfValue((String) objValue);
-            Settings.Secure.putInt(getContentResolver(),
-                    Settings.Secure.QS_ROWS_LANDSCAPE, intValue);
-            preference.setSummary(mRowsLandscape.getEntries()[index]);
         }
         if (preference == mQsColumns) {
             int intValue = Integer.valueOf((String) objValue);
