@@ -139,4 +139,8 @@
     <string name="lockscreen_maxnotif_sumary">启用通知调整</string>
     <string name="lockscreen_maxnotif_config">允许的最大通知</string>
     <string name="lockscreen_misc_category">锁屏通知计数</string>
+    <!-- UI debug setting: show CPU info? [CHAR LIMIT=25] -->
+    <string name="show_cpu_info">显示CPU信息</string>
+    <!-- UI debug setting: show cpu usage summary [CHAR LIMIT=50] -->
+    <string name="show_cpu_info_summary">屏幕覆盖显示当前的CPU信息</string>
 </resources>
