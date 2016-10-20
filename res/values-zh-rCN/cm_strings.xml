@@ -42,7 +42,7 @@
     <string name="root_appops_summary">查看和控制根规则</string>
 
     <!-- About phone screen, CyanogenMod version -->
-    <string name="mod_version">sdhz150本地化版本</string>
+    <string name="mod_version">CyanogenMod版本</string>
     <string name="mod_version_default">未知</string>
 
     <!-- About phone screen, CyanogenMod Api Level -->
@@ -282,4 +282,16 @@
     <string name="stylus_icon_enabled_title">使用触控笔时显示图标</string>
     <string name="stylus_icon_enabled_summary">使用指示笔悬停或绘制时显示指针图标</string>
 
+    <!-- Android debugging -->
+    <string name="enable_adb_cm">Android调试</string>
+    <string name="enable_adb_summary_cm">启用Android调试桥（ADB）接口</string>
+
+    <!-- Android debugging notification -->
+    <string name="adb_notify">调试通知</string>
+    <string name="adb_notify_summary">启用USB或网络调试时显示通知</string>
+
+    <!-- Android debugging over network -->
+    <string name="adb_over_network">ADB通过网络</string>
+    <string name="adb_over_network_summary">通过网络接口（Wifi \ u2011Fi，USB网络）启用TCP / IP调试。 此设置在重新启动时重置</string>
+    <string name="adb_over_network_warning">警告：启用ADB over network时，您的手机会在所有连接的网络上被入侵！\ n \ n当您在信任的网络上连接时，只能使用此功能。\ n \ n您真的要启用此功能?</string>
 </resources>
