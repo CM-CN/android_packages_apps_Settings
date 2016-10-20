@@ -138,9 +138,6 @@
     <string name="qs_layout_category">Rows and columns</string>
     <string name="qs_rows_portrait_title">Rows (portrait)</string>
     <string name="qs_columns_title">Columns</string>
-    <!-- Quick unlock -->
-    <string name="unlock_quick_unlock_control_title">Quick Unlock</string>
-    <string name="unlock_quick_unlock_control_summary">Unlock automatically when the correct PIN/password is entered</string>
     <!-- Lockscreen notif count -->
     <string name="lockscreen_maxnotif_title">Notification count</string>
     <string name="lockscreen_maxnotif_sumary">Enable adjustment of notifications</string>
