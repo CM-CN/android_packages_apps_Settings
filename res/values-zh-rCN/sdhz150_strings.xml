@@ -142,4 +142,7 @@
     <string name="show_cpu_info">显示CPU信息</string>
     <!-- UI debug setting: show cpu usage summary [CHAR LIMIT=50] -->
     <string name="show_cpu_info_summary">屏幕覆盖显示当前的CPU信息</string>
+    <!-- Quick settings disable on lockscreen -->
+    <string name="block_on_secure_keyguard_title">禁用锁屏通知栏下拉</string>
+    <string name="block_on_secure_keyguard_summary">禁用锁屏通知栏下拉，非安全锁屏无效</string>
 </resources>

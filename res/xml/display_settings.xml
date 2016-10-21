@@ -228,6 +228,12 @@
          android:key="transparent__shade"
          android:title="@string/qs_transparent_shade" >
 
+    	<SwitchPreference
+             android:key="block_on_secure_keyguard"
+             android:title="@string/block_on_secure_keyguard_title"
+             android:summary="@string/block_on_secure_keyguard_summary"
+             android:persistent="false" />
+
         <com.android.settings.sdhz150.SeekBarPreference
             android:key="qs_transparent_shade"
             android:title="@string/qs_transparent_shade"

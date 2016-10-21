@@ -84,6 +84,7 @@ import static android.provider.Settings.System.SCREEN_OFF_TIMEOUT;
 import static com.android.settingslib.RestrictedLockUtils.EnforcedAdmin;
 
 import cyanogenmod.hardware.CMHardwareManager;
+import com.android.internal.widget.LockPatternUtils;
 
 public class DisplaySettings extends SettingsPreferenceFragment implements
         Preference.OnPreferenceChangeListener, Indexable {
@@ -92,6 +93,7 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     /** If there is no setting in the provider, use this. */
     private static final int FALLBACK_SCREEN_TIMEOUT_VALUE = 30000;
 
+    private static final String PREF_BLOCK_ON_SECURE_KEYGUARD = "block_on_secure_keyguard";
     private static final String LOCKSCREEN_MAX_NOTIF_CONFIG = "lockscreen_max_notif_cofig";
     private static final String PREF_ROWS_PORTRAIT = "qs_rows_portrait";
     private static final String PREF_COLUMNS = "qs_columns";
@@ -150,11 +152,13 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     private SeekBarPreferenceA  mPowerMenuAlpha;
     private SeekBarPreferenceA  mPowerDialogDim;
     private LockscreenSeekBarPreference mMaxKeyguardNotifConfig;
+    private SwitchPreference mBlockOnSecureKeyguard;
 
     private SwitchPreference mStatusBarCarrier;
     private PreferenceScreen mCustomCarrierLabel;
     private ListPreference mCarrierSize;
     private String mCustomCarrierLabelText;
+    private static final int MY_USER_ID = UserHandle.myUserId();
 
     @Override
     protected int getMetricsCategory() {
@@ -166,6 +170,7 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
         super.onCreate(savedInstanceState);
         final Activity activity = getActivity();
         final ContentResolver resolver = activity.getContentResolver();
+        final LockPatternUtils lockPatternUtils = new LockPatternUtils(getActivity());
 
         addPreferencesFromResource(R.xml.display_settings);
 
@@ -199,6 +204,15 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
             prefSet.removePreference(mCustomCarrierLabel);
         } else {
             updateCustomLabelTextSummary();
+        }
+
+        mBlockOnSecureKeyguard = (SwitchPreference) findPreference(PREF_BLOCK_ON_SECURE_KEYGUARD);
+        if (lockPatternUtils.isSecure(MY_USER_ID)) {
+            mBlockOnSecureKeyguard.setChecked(Settings.Secure.getInt(resolver,
+                    Settings.Secure.STATUS_BAR_LOCKED_ON_SECURE_KEYGUARD, 1) == 1);
+            mBlockOnSecureKeyguard.setOnPreferenceChangeListener(this);
+        } else if (mBlockOnSecureKeyguard != null) {
+            prefSet.removePreference(mBlockOnSecureKeyguard);
         }
 
         mListViewAnimation = (ListPreference) findPreference(KEY_LISTVIEW_ANIMATION);
@@ -680,6 +694,11 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
             Settings.System.putInt(getContentResolver(), Settings.System.LISTVIEW_ANIMATION,
                     listviewanimation);
             mListViewAnimation.setSummary(mListViewAnimation.getEntries()[index]);
+        }
+        if (preference == mBlockOnSecureKeyguard) {
+            Settings.Secure.putInt(getContentResolver(),
+                    Settings.Secure.STATUS_BAR_LOCKED_ON_SECURE_KEYGUARD,
+                    (Boolean) objValue ? 1 : 0);
         }
         if (preference == mListViewInterpolator) {
             int listviewinterpolator = Integer.valueOf((String) objValue);
