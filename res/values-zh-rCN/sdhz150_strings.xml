@@ -145,4 +145,5 @@
     <!-- Quick settings disable on lockscreen -->
     <string name="block_on_secure_keyguard_title">禁用锁屏通知栏下拉</string>
     <string name="block_on_secure_keyguard_summary">禁用锁屏通知栏下拉，非安全锁屏无效</string>
+    <string name="notifications_transparency">锁屏通知扩展背景透明度</string>
 </resources>

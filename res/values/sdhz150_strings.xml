@@ -150,4 +150,5 @@
     <!-- Quick settings disable on lockscreen -->
     <string name="block_on_secure_keyguard_title">Disable quick settings</string>
     <string name="block_on_secure_keyguard_summary">Disables quick settings in the keyguard for a secure lock only</string>
+    <string name="notifications_transparency">Lock screen notification extended background transparency</string>
 </resources>

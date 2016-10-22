@@ -268,6 +268,14 @@
               android:defaultValue="50"
               android:persistent="false" />
 
+        <com.android.settings.sdhz150.SeekBarPreference
+            android:key="notification_alpha"
+            android:title="@string/notifications_transparency"
+            android:max="255"
+            settings:min="0"
+	    settings:units=""
+            android:persistent="false" />
+
      </PreferenceCategory>
 
     <PreferenceCategory

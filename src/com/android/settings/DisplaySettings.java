@@ -93,6 +93,7 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     /** If there is no setting in the provider, use this. */
     private static final int FALLBACK_SCREEN_TIMEOUT_VALUE = 30000;
 
+    private static final String PREF_NOTIFICATION_ALPHA = "notification_alpha";
     private static final String PREF_BLOCK_ON_SECURE_KEYGUARD = "block_on_secure_keyguard";
     private static final String LOCKSCREEN_MAX_NOTIF_CONFIG = "lockscreen_max_notif_cofig";
     private static final String PREF_ROWS_PORTRAIT = "qs_rows_portrait";
@@ -149,6 +150,7 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
 
     private SeekBarPreference mQSShadeAlpha;
     private SeekBarPreference mVolumeDialogAlpha;
+    private SeekBarPreference mNotificationsAlpha;
     private SeekBarPreferenceA  mPowerMenuAlpha;
     private SeekBarPreferenceA  mPowerDialogDim;
     private LockscreenSeekBarPreference mMaxKeyguardNotifConfig;
@@ -228,6 +230,13 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
         mListViewInterpolator.setValue(String.valueOf(listviewinterpolator));
         mListViewInterpolator.setSummary(mListViewInterpolator.getEntry());
         mListViewInterpolator.setOnPreferenceChangeListener(this);
+
+        // Notifications alpha
+        mNotificationsAlpha = (SeekBarPreference) findPreference(PREF_NOTIFICATION_ALPHA);
+        int notificationsAlpha = Settings.System.getInt(getContentResolver(),
+                Settings.System.NOTIFICATION_ALPHA, 255);
+        mNotificationsAlpha.setValue(notificationsAlpha / 1);
+        mNotificationsAlpha.setOnPreferenceChangeListener(this);
 
         // QS shade alpha
         mQSShadeAlpha = (SeekBarPreference) findPreference(PREF_QS_TRANSPARENT_SHADE);
@@ -682,6 +691,11 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
             int kgconf = (Integer) objValue;
             Settings.System.putInt(getContentResolver(),
                     Settings.System.LOCKSCREEN_MAX_NOTIF_CONFIG, kgconf);
+        }
+        if (preference == mNotificationsAlpha) {
+          int alpha = (Integer) objValue;
+          Settings.System.putInt(getContentResolver(),
+                  Settings.System.NOTIFICATION_ALPHA, alpha * 1);
         }
         if (preference == mQSShadeAlpha) {
             int alpha = (Integer) objValue;
