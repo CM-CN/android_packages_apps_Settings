@@ -228,6 +228,11 @@
          android:key="transparent__shade"
          android:title="@string/qs_transparent_shade" >
 
+         <com.android.settings.sdhz150.SystemSettingSwitchPreference
+	 	android:key="shake_clean_notification"
+	 	android:title="@string/shake_clean_notification"
+	 	android:defaultValue="true" />
+
     	<SwitchPreference
              android:key="block_on_secure_keyguard"
              android:title="@string/block_on_secure_keyguard_title"
@@ -268,14 +273,6 @@
               android:defaultValue="50"
               android:persistent="false" />
 
-        <com.android.settings.sdhz150.SeekBarPreference
-            android:key="notification_alpha"
-            android:title="@string/notifications_transparency"
-            android:max="255"
-            settings:min="0"
-	    settings:units=""
-            android:persistent="false" />
-
      </PreferenceCategory>
 
     <PreferenceCategory
@@ -296,6 +293,14 @@
                settings:units=""
                android:persistent="false"
                android:dependency="lock_screen_custom_notif" />
+
+        <com.android.settings.sdhz150.SeekBarPreference
+            android:key="notification_alpha"
+            android:title="@string/notifications_transparency"
+            android:max="255"
+            settings:min="0"
+	    settings:units=""
+            android:persistent="false" />
 
     </PreferenceCategory>
 
