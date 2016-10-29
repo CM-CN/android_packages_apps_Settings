@@ -314,6 +314,10 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
 
         mFontSizePref = findPreference(KEY_FONT_SIZE);
 
+        if (!NightDisplayController.isAvailable(activity)) {
+            removePreference(KEY_NIGHT_DISPLAY);
+        }
+
         if (displayPrefs != null) {
             mAutoBrightnessPreference = (SwitchPreference) findPreference(KEY_AUTO_BRIGHTNESS);
             if (mAutoBrightnessPreference != null) {
@@ -323,13 +327,7 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
                     displayPrefs.removePreference(mAutoBrightnessPreference);
                 }
             }
-        }
 
-        if (!NightDisplayController.isAvailable(activity)) {
-            removePreference(KEY_NIGHT_DISPLAY);
-        }
-
-        if (isLiftToWakeAvailable(activity)) {
             mLiftToWakePreference = (SwitchPreference) findPreference(KEY_LIFT_TO_WAKE);
             if (mLiftToWakePreference != null) {
                 if (isLiftToWakeAvailable(activity)) {
