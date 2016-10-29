@@ -136,7 +136,6 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     private SwitchPreference mTapToWakePreference;
     private SwitchPreference mAutoBrightnessPreference;
     private SwitchPreference mCameraGesturePreference;
-    private SwitchPreference mCameraDoubleTapPowerGesturePreference;
     private SwitchPreference mKeyguardToggleTorch;
     private SwitchPreference mThreeFingerGesture;
 
@@ -723,11 +722,6 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
             mImmersiveRecents.setValue(String.valueOf(objValue));
             mImmersiveRecents.setSummary(mImmersiveRecents.getEntry());
         }
-        if (preference == mCameraDoubleTapPowerGesturePreference) {
-            boolean value = (Boolean) objValue;
-            Settings.Secure.putInt(getContentResolver(), CAMERA_DOUBLE_TAP_POWER_GESTURE_DISABLED,
-                    value ? 0 : 1 /* Backwards because setting is for disabling */);
-        }
         if (preference == mKeyguardToggleTorch) {
             Settings.System.putInt(getContentResolver(),
                     Settings.System.KEYGUARD_TOGGLE_TORCH,
@@ -774,6 +768,9 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
 	 @Override
     public boolean onPreferenceTreeClick(Preference preference) {
         final ContentResolver resolver = getActivity().getContentResolver();
+        if (preference == mDozePreference) {
+            MetricsLogger.action(getActivity(), MetricsEvent.ACTION_AMBIENT_DISPLAY);
+        }
         if (preference.getKey().equals(CUSTOM_CARRIER_LABEL)) {
             AlertDialog.Builder alert = new AlertDialog.Builder(getActivity());
             alert.setTitle(R.string.custom_carrier_label_title);
@@ -814,14 +811,6 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
         } 
           return super.onPreferenceTreeClick(preference);
       }
-
-    @Override
-    public boolean onPreferenceTreeClick(Preference preference) {
-        if (preference == mDozePreference) {
-            MetricsLogger.action(getActivity(), MetricsEvent.ACTION_AMBIENT_DISPLAY);
-        }
-        return super.onPreferenceTreeClick(preference);
-    }
 
     @Override
     protected int getHelpResource() {
