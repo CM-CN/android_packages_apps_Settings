@@ -138,4 +138,11 @@
     <string name="heads_up_time_out_6sec">6分钟</string>
     <string name="heads_up_time_out_8sec">8分钟</string>
     <string name="heads_up_time_out_10sec">10分钟</string>
+
+    <!-- Option to enable/disable scrolling cache -->
+    <string name="pref_scrollingcache_title">滚动缓存</string>
+    <string name="pref_scrollingcache_force_enable">强制启用</string>
+    <string name="pref_scrollingcache_default_enable">默认启用</string>
+    <string name="pref_scrollingcache_default_disable">默认禁用</string>
+    <string name="pref_scrollingcache_force_disable">强制禁用</string>
 </resources>
