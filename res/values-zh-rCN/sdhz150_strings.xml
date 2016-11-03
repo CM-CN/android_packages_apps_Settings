@@ -118,4 +118,24 @@
     <string name="block_on_secure_keyguard_summary">禁用锁屏通知栏下拉，非安全锁屏无效</string>
     <string name="notifications_transparency">锁屏通知扩展背景透明度</string>
     <string name="shake_clean_notification">通知栏通知晃动清理</string>
+
+    <!-- Heads up snooze -->
+    <string name="heads_up_snooze_title">暂停计时器</string>
+    <string name="heads_up_snooze_summary_one_minute">向上滑动查看通知将从该应用程序打盹1分钟</string>
+    <string name="heads_up_snooze_disabled_summary">暂停计时器已禁用</string>
+    <string name="heads_up_snooze_1min">1分钟</string>
+    <string name="heads_up_snooze_5min">5分钟</string>
+    <string name="heads_up_snooze_10min">10分钟</string>
+    <string name="heads_up_snooze_15min">15分钟</string>
+    <string name="heads_up_snooze_20min">20分钟</string>
+
+    <!-- Heads up timeout -->
+    <string name="heads_up_category">浮动通知</string>
+    <string name="heads_up_time_out_title">休息</string>
+    <string name="heads_up_time_out_2sec">2分钟</string>
+    <string name="heads_up_time_out_4sec">4分钟s</string>
+    <string name="heads_up_time_out_5sec">5分钟</string>
+    <string name="heads_up_time_out_6sec">6分钟</string>
+    <string name="heads_up_time_out_8sec">8分钟</string>
+    <string name="heads_up_time_out_10sec">10分钟</string>
 </resources>
