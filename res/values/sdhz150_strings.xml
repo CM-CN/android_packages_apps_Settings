@@ -122,4 +122,9 @@
     <string name="block_on_secure_keyguard_summary">Disables quick settings in the keyguard for a secure lock only</string>
     <string name="notifications_transparency">Lock screen notification extended background transparency</string>
     <string name="shake_clean_notification">Notification bar notification shaking cleaning</string>
+
+    <!-- Optional screenshot type -->
+    <string name="screenshot_type_title">Screenshot type</string>
+    <string name="screenshot_type_fullscreen">Take fullscreen screenshots</string>
+    <string name="screenshot_type_partial">Drag selection on the area you want to take as a screenshot</string>
 </resources>

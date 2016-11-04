@@ -205,6 +205,12 @@
             	android:summary="@string/three_finger_gesture_summary"
             	android:defaultValue="false" />
 
+       <ListPreference
+             android:entries="@array/screenshot_type_entries"
+             android:entryValues="@array/screenshot_type_values"
+             android:key="screenshot_type"
+             android:title="@string/screenshot_type_title" />
+
             <com.android.settings.sdhz150.SystemSettingSwitchPreference
                	android:key="show_su_indicator"
                	android:title="@string/show_su_indicator_title"
