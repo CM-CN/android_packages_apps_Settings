@@ -127,9 +127,6 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     private static final String KEY_VR_DISPLAY_PREF = "vr_display_pref";
     private static final String PREF_HEADS_UP_TIME_OUT = "heads_up_time_out";
     private static final String PREF_HEADS_UP_SNOOZE_TIME = "heads_up_snooze_time";
-    private static final String SCROLLINGCACHE_PREF = "pref_scrollingcache";
-    private static final String SCROLLINGCACHE_PERSIST_PROP = "persist.sys.scrollingcache";
-    private static final String SCROLLINGCACHE_DEFAULT = "1";
 
     private Preference mFontSizePref;
 
@@ -138,7 +135,6 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     private ListPreference mHeadsUpTimeOut;
     private ListPreference mHeadsUpSnoozeTime;
     private Preference mScreenSaverPreference;
-    private ListPreference mScrollingCachePref;
     private SwitchPreference mLiftToWakePreference;
     private SwitchPreference mDozePreference;
     private SwitchPreference mTapToWakePreference;
@@ -221,13 +217,7 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
             mBlockOnSecureKeyguard.setOnPreferenceChangeListener(this);
         } else if (mBlockOnSecureKeyguard != null) {
             prefSet.removePreference(mBlockOnSecureKeyguard);
-
-        mScrollingCachePref = (ListPreference) findPreference(SCROLLINGCACHE_PREF);
-        mScrollingCachePref.setValue(SystemProperties.get(SCROLLINGCACHE_PERSIST_PROP,
-                SystemProperties.get(SCROLLINGCACHE_PERSIST_PROP, SCROLLINGCACHE_DEFAULT)));
-        mScrollingCachePref.setSummary(mScrollingCachePref.getEntry());
-        mScrollingCachePref.setOnPreferenceChangeListener(this);
-    }
+        }
 
         mListViewAnimation = (ListPreference) findPreference(KEY_LISTVIEW_ANIMATION);
         int listviewanimation = Settings.System.getInt(resolver,
@@ -687,16 +677,6 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
                    Settings.System.HEADS_UP_TIMEOUT,
                    headsUpTimeOut);
            updateHeadsUpTimeOutSummary(headsUpTimeOut);
-         }
-        if (preference == mScrollingCachePref) {
-            if (objValue != null) {
-            String ScrollingCache = (String) objValue;
-            SystemProperties.set(SCROLLINGCACHE_PERSIST_PROP, ScrollingCache);
-            int ScrollingCacheIndex = mScrollingCachePref
-                    .findIndexOfValue(ScrollingCache);
-            mScrollingCachePref
-                    .setSummary(mScrollingCachePref.getEntries()[ScrollingCacheIndex]);
-            }
          }
         if (preference == mHeadsUpSnoozeTime) {
             int headsUpSnooze = Integer.valueOf((String) objValue);
