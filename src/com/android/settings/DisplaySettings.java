@@ -126,15 +126,12 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
     private static final String KEY_WALLPAPER = "wallpaper";
     private static final String KEY_VR_DISPLAY_PREF = "vr_display_pref";
     private static final String SCREENSHOT_TYPE = "screenshot_type";
-    private static final String KEY_CAMERA_SOUNDS = "camera_sounds";
-    private static final String PROP_CAMERA_SOUND = "persist.sys.camera-sound";
 
     private Preference mFontSizePref;
 
     private TimeoutListPreference mScreenTimeoutPreference;
     private ListPreference mNightModePreference;
     private Preference mScreenSaverPreference;
-    private SwitchPreference mCameraSounds;
     private SwitchPreference mLiftToWakePreference;
     private SwitchPreference mDozePreference;
     private SwitchPreference mTapToWakePreference;
@@ -273,10 +270,6 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
                 Settings.System.LOCKSCREEN_MAX_NOTIF_CONFIG, 5);
         mMaxKeyguardNotifConfig.setValue(kgconf / 1);
         mMaxKeyguardNotifConfig.setOnPreferenceChangeListener(this);
-
-        mCameraSounds = (SwitchPreference) findPreference(KEY_CAMERA_SOUNDS);
-        mCameraSounds.setChecked(SystemProperties.getBoolean(PROP_CAMERA_SOUND, true));
-        mCameraSounds.setOnPreferenceChangeListener(this);
 
         // Volume dialog alpha
         mVolumeDialogAlpha = (SeekBarPreference) findPreference(PREF_TRANSPARENT_VOLUME_DIALOG);
@@ -764,15 +757,6 @@ public class DisplaySettings extends SettingsPreferenceFragment implements
              i.setAction(Intent.ACTION_CUSTOM_CARRIER_LABEL_CHANGED);
              getActivity().sendBroadcast(i);
          }
-        if (preference == mCameraSounds) {
-             if (KEY_CAMERA_SOUNDS.equals(key)) {
-               if ((Boolean) objValue) {
-                       SystemProperties.set(PROP_CAMERA_SOUND, "1");
-                } else {
-                   SystemProperties.set(PROP_CAMERA_SOUND, "0");
-              	 }
-             }
-          }
          if (preference == mCarrierSize) {
 	    String newValue = (String) objValue;
              int CarrierSize = Integer.valueOf((String) newValue);
